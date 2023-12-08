@@ -1,6 +1,9 @@
 # cputil
 CPU performance utils CLI written in Python
 
+### Disclaimer
+This software has only be tested on AMD CPUs yet. If you experience any unexpected behaviour, please open up an issue
+
 ```
 $ cputil --help
 cputil: cpu util CLI
