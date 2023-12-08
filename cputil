@@ -1,0 +1,194 @@
+#!/usr/bin/python3
+
+import os
+import sys
+from subprocess import getoutput as terminal
+
+DRIVER_DIR = '/sys/devices/system/cpu/cpufreq'
+GOVERNORS = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors').strip().split(' ')
+POLICIES = terminal('ls ' + DRIVER_DIR + ' | grep policy').strip().split('\n')
+FREQUENCIES = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies').strip().split(' ')
+
+def setGovernor(governor, cpu):
+    if cpu is True:
+        if governor not in GOVERNORS:
+            return False
+
+        print('Setting governor for all threads to ' + governor)   
+        for policy in POLICIES:
+            os.system(f'echo {governor} > {DRIVER_DIR}/{policy}/scaling_governor')
+
+        return True
+    else:
+        policy = f'policy{cpu}'
+
+        if policy in POLICIES and governor in GOVERNORS:
+            print('Setting governor for thread ' + str(cpu) + ' to ' + governor)
+            os.system(f'echo {governor} > {DRIVER_DIR}/{policy}/scaling_governor')
+            return True
+        return False
+
+def getCurrentGovernors():
+    governors = {}
+    for policy in POLICIES:
+        governors[policy] = terminal(f'cat {DRIVER_DIR}/{policy}/scaling_governor').strip()
+
+    return governors
+
+def getCurrentFrequencies():
+    frequencies = {}
+
+    for policy in POLICIES:
+        frequencies[policy] = {'min' : terminal(f'cat {DRIVER_DIR}/{policy}/scaling_min_freq'), 'max' : terminal(f'cat {DRIVER_DIR}/{policy}/scaling_max_freq')}
+
+    return frequencies
+
+def setMinFrequency(frequency, cpu):
+    if cpu is True:
+        if frequency not in FREQUENCIES:
+            return False
+
+        print('Setting for all threads minimum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
+        for policy in POLICIES:
+            os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_min_freq')
+
+        return True
+
+    else:
+        policy = f'policy{cpu}'
+        if frequency not in FREQUENCIES:
+            return False
+
+        if policy in POLICIES:
+            print('Setting for thread ' + str(cpu) + ' minimum frequency to ' + str(round(frequency / 1000000, 1)) + ' GHz')
+            command = f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_min_freq'
+            os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_min_freq')
+            return True
+        return False
+
+def setMaxFrequency(frequency, cpu):
+    if cpu is True:
+        if frequency not in FREQUENCIES:
+            return False
+
+        print('Setting for all threads maximum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
+        for policy in POLICIES:
+            os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_max_freq')
+
+        return True
+
+    else:
+        policy = f'policy{cpu}'
+        if frequency not in FREQUENCIES:
+            return False
+
+        if policy in POLICIES:
+            print('Setting for thread ' + str(cpu) + ' maximum frequency to ' + str(round(frequency / 1000000, 1)) + ' GHz')
+            os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_max_freq')
+            return True
+        return False
+    
+if __name__ == '__main__':
+    args = sys.argv[1:]
+    cpu = True
+
+    if not args:
+        print('Available governors:')
+        for governor in GOVERNORS:
+            print('\t' + governor)
+
+        print('\nAvailable scaling frequencies:')
+        for frequency in FREQUENCIES:   
+            print('\t' + frequency)
+
+    
+        print("\nCurrent status:")
+        freqs = getCurrentFrequencies()
+        for index, governor in getCurrentGovernors().items():
+            print(f'Thread {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
+
+    elif '-i' in args or '--info' in args:
+        model = terminal('grep "model name" -i -m 1 /proc/cpuinfo | awk -F \':\'  \'{ print $2 }\'').strip()
+        if model:
+            print('Model name:\t' + model)
+
+        coreCount = terminal('grep "cpu cores" -i -m 1 /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip()
+        if coreCount:
+            print('Cores count:\t' + coreCount)
+
+        threadCount = terminal('grep processor -c /proc/cpuinfo').strip()
+        if threadCount:
+            print('Threads count:\t' + threadCount)
+
+        if 'boost' in os.listdir(DRIVER_DIR):
+            if '1' in terminal(f'cat {DRIVER_DIR}/boost'):
+                print('Clock boost:\tactive')
+            else:
+                print('Clock boost:\tnot active')
+        else:
+            print('Clock boost:\tnot available')
+
+        print('Minimum clock:\t' + str(round(min(tuple(int(freq) for freq in FREQUENCIES)) / 1000000, 1)) + ' GHz')
+        print('Maximum clock:\t' + str(round(max(tuple(int(freq) for freq in FREQUENCIES)) / 1000000, 1)) + ' GHz')
+    
+    elif '-sg' in args or '--set-governor' in args: 
+        if os.getuid():
+            print('Governor setting requires root privilegies', file=sys.stderr)
+            sys.exit(0) 
+
+        try:
+            governor = args[args.index('-sg') + 1]
+
+        except:
+            governor = args[args.index('--set-governor') + 1]
+
+        if '-cpu' in args:
+            cpu = int(args[args.index('-cpu') + 1])
+
+        setGovernor(governor, cpu)
+
+    elif '-sfm' in args or '--set-min-frequency' in args:
+        if os.getuid():
+            print('Frequency setting requires root privilegies', file=sys.stderr)
+            sys.exit(0) 
+
+        try:
+            frequency = args[args.index('-sfm') + 1]
+        except:
+            frequency = args[args.index('--set-min-frequency') + 1]
+
+        if '-cpu' in args:
+            cpu = int(args[args.index('-cpu') + 1])
+
+        status = setMinFrequency(frequency, cpu)
+        if not status:
+            print('Error setting min frequency', file=sys.stderr)
+        
+
+    elif '-sfM' in args or '--set-max-frequency' in args:
+        if os.getuid():
+            print('Frequency setting requires root privilegies', file=sys.stderr)
+            sys.exit(0) 
+
+        try:
+            frequency = args[args.index('-sfM') + 1]
+        except:
+            frequency = args[args.index('--set-max-frequency') + 1]
+
+        if '-cpu' in args:
+            cpu = int(args[args.index('-cpu') + 1])
+
+        status = setMaxFrequency(frequency, cpu)
+        if not status:
+            print('Error setting max frequency', file=sys.stderr)
+
+    elif '-h' in args or '--help' in args:
+        print('cputil: cpu util CLI')
+        print('usage: cputil [OPTIONS]')
+        print('\nOptions:')
+        print('    -sg  --set--governor GOVERNOR             set governor')
+        print('    -sfm --set-minimum-frequency FREQUENCY    set minimum frequency')
+        print('    -sfM --set-maximum-frequency FREQUENCY    set maximum frequency')
+        print('    -i   --info    Show info about CPU')
+        print('    -cpu CPU       Select which thread to affect with action,')
+        print('                   if omitted any action will affect all threads')
