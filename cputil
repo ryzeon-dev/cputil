@@ -2,6 +2,7 @@
 
 import os
 import sys
+import time
 from subprocess import getoutput as terminal
 
 DRIVER_DIR = '/sys/devices/system/cpu/cpufreq'
@@ -88,6 +89,58 @@ def setMaxFrequency(frequency, cpu):
             return True
         return False
     
+def makeListStructure(stat):
+    for index, line in enumerate(stat):
+        splitted = line.split(' ')
+        for element in splitted:
+            if element == '' or element == ' ':
+                splitted.remove(element)
+        stat[index] = list(int(element) for element in splitted)
+    return stat
+
+usageContexts = {
+    0 : 'user',
+    1 : 'nice',
+    2 : 'system',
+    3 : 'idle',
+    4 : 'iowait',
+    5 : 'interrupt',
+    6 : 'soft-interrupt'
+}
+
+def getParameterUsage(beforeStat, afterStat):
+    usage = {}
+    beforeSum = sum(beforeStat)
+    afterSum = sum(afterStat)
+
+    beforeIdle = beforeStat[3]
+    afterIdle = afterStat[3]
+
+    total = afterSum - beforeSum
+    totalUsagePercent = (total - (afterIdle - beforeIdle)) * 100 / total
+    usage['total'] = round(totalUsagePercent, 2)
+
+    for index, label in usageContexts.items():
+        usage[label] = round(
+            100 - (total - (afterStat[index] - beforeStat[index])) * 100 / total, 2
+        )
+
+    return usage
+
+def cpuUsage():
+    beforeStat = terminal('grep cpu -i /proc/stat | awk \'{ $1="" ; print }\'').strip().split('\n')
+    time.sleep(0.25)
+    afterStat = terminal('grep cpu -i /proc/stat | awk \'{ $1="" ; print }\'').strip().split('\n')
+
+    beforeStat = makeListStructure(beforeStat)
+    afterstat = makeListStructure(afterStat)
+
+    usages = []
+    for i in range(len(beforeStat)):
+        usages.append(getParameterUsage(beforeStat[i], afterStat[i]))
+
+    return usages
+
 if __name__ == '__main__':
     args = sys.argv[1:]
     cpu = True
@@ -106,6 +159,21 @@ if __name__ == '__main__':
         freqs = getCurrentFrequencies()
         for index, governor in getCurrentGovernors().items():
             print(f'Thread {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
+
+    elif '-h' in args or '--help' in args:
+        print('cputil: cpu util CLI')
+        print('usage: cputil [OPTIONS]')
+        print('\nOptions:')
+        print('    -sg  --set--governor         GOVERNOR     set governor (root)')
+        print('    -sfm --set-minimum-frequency FREQUENCY    set minimum frequency (root)')
+        print('    -sfM --set-maximum-frequency FREQUENCY    set maximum frequency (root)')
+        print('    -cpu CPU       Select which thread to affect with action,')
+        print('                   if omitted the action will affect all threads,')
+        print('                   to be used with -sg, -sfm, -sfM, -u')
+        print('    -i   --info    Show info about CPU')
+        print('    -u   --usage   Show CPU usage')
+        print('    -avg           If specified, only average usage is shown,')
+        print('                   to be used only with -u')
 
     elif '-i' in args or '--info' in args:
         model = terminal('grep "model name" -i -m 1 /proc/cpuinfo | awk -F \':\'  \'{ print $2 }\'').strip()
@@ -131,6 +199,38 @@ if __name__ == '__main__':
         print('Minimum clock:\t' + str(round(min(tuple(int(freq) for freq in FREQUENCIES)) / 1000000, 1)) + ' GHz')
         print('Maximum clock:\t' + str(round(max(tuple(int(freq) for freq in FREQUENCIES)) / 1000000, 1)) + ' GHz')
     
+    elif '-u' in args or '--usage' in args:
+        usages = cpuUsage()
+
+        if '-cpu' in args:
+            cpuIndex = args[args.index('-cpu') + 1]
+            usage = usages[int(cpuIndex) + 1]
+
+            print(f'Thread: {cpuIndex}')
+            for label, percent in usage.items():
+                indent = '\t'
+                if len(label) <= 9:
+                    indent += '\t'
+                print(f'    {label}:{indent}{percent} %')
+
+        else:
+            print('Average:')
+            for label, percent in usages[0].items():
+                indent = '\t'
+                if len(label) <= 9:
+                    indent += '\t'
+                print(f'    {label}:{indent}{percent} %')
+
+            if '-avg' not in args:
+                for index, thread in enumerate(usages[1:]):
+                    print(f'\nThread: {index}')
+
+                    for label, percent in thread.items():
+                        indent = '\t'
+                        if len(label) <= 9:
+                            indent += '\t'
+                        print(f'    {label}:{indent}{percent} %')
+
     elif '-sg' in args or '--set-governor' in args: 
         if os.getuid():
             print('Governor setting requires root privilegies', file=sys.stderr)
@@ -181,14 +281,3 @@ if __name__ == '__main__':
         status = setMaxFrequency(frequency, cpu)
         if not status:
             print('Error setting max frequency', file=sys.stderr)
-
-    elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI')
-        print('usage: cputil [OPTIONS]')
-        print('\nOptions:')
-        print('    -sg  --set--governor GOVERNOR             set governor')
-        print('    -sfm --set-minimum-frequency FREQUENCY    set minimum frequency')
-        print('    -sfM --set-maximum-frequency FREQUENCY    set maximum frequency')
-        print('    -i   --info    Show info about CPU')
-        print('    -cpu CPU       Select which thread to affect with action,')
-        print('                   if omitted any action will affect all threads')

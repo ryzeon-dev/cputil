@@ -10,12 +10,16 @@ cputil: cpu util CLI
 usage: cputil [OPTIONS]
 
 Options:
-    -sg  --set--governor GOVERNOR             set governor
-    -sfm --set-minimum-frequency FREQUENCY    set minimum frequency
-    -sfM --set-maximum-frequency FREQUENCY    set maximum frequency
-    -i   --info    Show info about CPU
-    -cpu CPU       Select which thread to affect with action,
-                   if omitted any action will affect all threads
+-sg  --set--governor         GOVERNOR     set governor (root)
+-sfm --set-minimum-frequency FREQUENCY    set minimum frequency (root)
+-sfM --set-maximum-frequency FREQUENCY    set maximum frequency (root)
+-cpu CPU       Select which thread to affect with action,
+if omitted the action will affect all threads,
+to be used with -sg, -sfm, -sfM, -u
+-i   --info    Show info about CPU
+-u   --usage   Show CPU usage
+-avg           If specified, only average usage is shown,
+to be used only with -u
 ```
 
 ## Example outputs
@@ -57,4 +61,18 @@ Thread 6:       "schedutil" governor    frequency max = 3800000, min = 2200000
 Thread 7:       "schedutil" governor    frequency max = 3800000, min = 2200000
 Thread 8:       "schedutil" governor    frequency max = 3800000, min = 2200000
 Thread 9:       "schedutil" governor    frequency max = 3800000, min = 2200000
+```
+
+```
+$ cputil -u -avg
+Average:
+total:              0.74 %
+user:               0.5 %
+nice:               0.0 %
+system:             0.25 %
+idle:               99.26 %
+iowait:             0.0 %
+interrupt:          0.0 %
+soft-interrupt:     0.0 %
+
 ```
