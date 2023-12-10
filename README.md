@@ -66,13 +66,13 @@ Thread 9:       "schedutil" governor    frequency max = 3800000, min = 2200000
 ```
 $ cputil -u -avg
 Average:
-total:              0.74 %
-user:               0.5 %
+total:              1.73 %
+user:               0.74 %
 nice:               0.0 %
-system:             0.25 %
-idle:               99.26 %
-iowait:             0.0 %
+system:             0.5 %
+idle:               98.27 %
+iowait:             0.5 %
 interrupt:          0.0 %
 soft-interrupt:     0.0 %
-
+Frequency:          3041.76 MHz
 ```

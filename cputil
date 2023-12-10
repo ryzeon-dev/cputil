@@ -141,6 +141,14 @@ def cpuUsage():
 
     return usages
 
+def cpuFrequency():
+    frequencies = terminal('grep "cpu MHZ" -i /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip().split('\n')
+    frequencies = list(round(float(freq.replace(',', '.')), 2) for freq in frequencies)
+
+    average = round(sum(frequencies) / len(frequencies), 2)
+
+    return average, frequencies
+
 if __name__ == '__main__':
     args = sys.argv[1:]
     cpu = True
@@ -201,10 +209,12 @@ if __name__ == '__main__':
     
     elif '-u' in args or '--usage' in args:
         usages = cpuUsage()
+        averageFrequency, frequencies = cpuFrequency()
 
         if '-cpu' in args:
             cpuIndex = args[args.index('-cpu') + 1]
             usage = usages[int(cpuIndex) + 1]
+            frequency = frequencies[int(cpuIndex)]
 
             print(f'Thread: {cpuIndex}')
             for label, percent in usage.items():
@@ -212,6 +222,7 @@ if __name__ == '__main__':
                 if len(label) <= 9:
                     indent += '\t'
                 print(f'    {label}:{indent}{percent} %')
+            print(f'    Frequency: \t\t{frequency} MHz')
 
         else:
             print('Average:')
@@ -220,6 +231,7 @@ if __name__ == '__main__':
                 if len(label) <= 9:
                     indent += '\t'
                 print(f'    {label}:{indent}{percent} %')
+            print(f'    Frequency:\t\t{averageFrequency} MHz')
 
             if '-avg' not in args:
                 for index, thread in enumerate(usages[1:]):
@@ -230,6 +242,7 @@ if __name__ == '__main__':
                         if len(label) <= 9:
                             indent += '\t'
                         print(f'    {label}:{indent}{percent} %')
+                    print(f'    Frequency: \t\t{frequencies[index]} MHz' )
 
     elif '-sg' in args or '--set-governor' in args: 
         if os.getuid():
