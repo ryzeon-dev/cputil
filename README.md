@@ -45,22 +45,22 @@ Available scaling frequencies:
         2200000
 
 Current status:
-Thread 0:       "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 1:       "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 10:      "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 11:      "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 12:      "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 13:      "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 14:      "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 15:      "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 2:       "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 3:       "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 4:       "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 5:       "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 6:       "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 7:       "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 8:       "schedutil" governor    frequency max = 3800000, min = 2200000
-Thread 9:       "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 0:    "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 1:    "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 10:   "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 11:   "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 12:   "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 13:   "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 14:   "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 15:   "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 2:    "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 3:    "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 4:    "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 5:    "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 6:    "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 7:    "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 8:    "schedutil" governor    frequency max = 3800000, min = 2200000
+Processor 9:    "schedutil" governor    frequency max = 3800000, min = 2200000
 ```
 
 ```
