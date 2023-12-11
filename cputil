@@ -8,7 +8,13 @@ from subprocess import getoutput as terminal
 DRIVER_DIR = '/sys/devices/system/cpu/cpufreq'
 GOVERNORS = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors').strip().split(' ')
 POLICIES = terminal('ls ' + DRIVER_DIR + ' | grep policy').strip().split('\n')
-FREQUENCIES = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies').strip().split(' ')
+
+FREQUENCIES = None
+if 'scaling_available_frequencies' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/'):
+    FREQUENCIES = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies').strip().split(' ')
+elif 'cpuinfo_max_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/') and 'cpuinfo_min_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/'):
+    FREQUENCIES = [terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq').strip(), terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq').strip()]
+
 
 def setGovernor(governor, cpu):
     if cpu is True:
@@ -45,6 +51,9 @@ def getCurrentFrequencies():
     return frequencies
 
 def setMinFrequency(frequency, cpu):
+    if FREQUENCIES is None:
+        return False
+    
     if cpu is True:
         if frequency not in FREQUENCIES:
             return False
@@ -68,6 +77,9 @@ def setMinFrequency(frequency, cpu):
         return False
 
 def setMaxFrequency(frequency, cpu):
+    if FREQUENCIES is None:
+        return False
+        
     if cpu is True:
         if frequency not in FREQUENCIES:
             return False
@@ -161,9 +173,10 @@ if __name__ == '__main__':
         for governor in GOVERNORS:
             print('\t' + governor)
 
-        print('\nAvailable scaling frequencies:')
-        for frequency in FREQUENCIES:   
-            print('\t' + frequency)
+        if FREQUENCIES is not None:
+            print('\nAvailable scaling frequencies:')
+            for frequency in FREQUENCIES:   
+                print('\t' + frequency)
 
     
         print("\nCurrent status:")
@@ -209,8 +222,9 @@ if __name__ == '__main__':
         else:
             print('Clock boost:\tnot available')
 
-        print('Minimum clock:\t' + str(round(min(tuple(int(freq) for freq in FREQUENCIES)) / 1000000, 1)) + ' GHz')
-        print('Maximum clock:\t' + str(round(max(tuple(int(freq) for freq in FREQUENCIES)) / 1000000, 1)) + ' GHz')
+        if FREQUENCIES is not None:
+            print('Minimum clock:\t' + str(round(min(tuple(int(freq) for freq in FREQUENCIES)) / 1000000, 1)) + ' GHz')
+            print('Maximum clock:\t' + str(round(max(tuple(int(freq) for freq in FREQUENCIES)) / 1000000, 1)) + ' GHz')
     
     elif '-u' in args or '--usage' in args:
         usages = cpuUsage()
