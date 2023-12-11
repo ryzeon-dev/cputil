@@ -70,7 +70,7 @@ def setMinFrequency(frequency, cpu):
             return False
 
         if policy in POLICIES:
-            print('Setting for processor ' + str(cpu) + ' minimum frequency to ' + str(round(frequency / 1000000, 1)) + ' GHz')
+            print('Setting for processor ' + str(cpu) + ' minimum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
             command = f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_min_freq'
             os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_min_freq')
             return True
@@ -96,7 +96,7 @@ def setMaxFrequency(frequency, cpu):
             return False
 
         if policy in POLICIES:
-            print('Setting for processor ' + str(cpu) + ' maximum frequency to ' + str(round(frequency / 1000000, 1)) + ' GHz')
+            print('Setting for processor ' + str(cpu) + ' maximum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
             os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_max_freq')
             return True
         return False
@@ -188,7 +188,7 @@ if __name__ == '__main__':
         print('cputil: cpu util CLI')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
-        print('    -sg  --set--governor         GOVERNOR     set governor (root)')
+        print('    -sg  --set-governor          GOVERNOR     set governor (root)')
         print('    -sfm --set-minimum-frequency FREQUENCY    set minimum frequency (root)')
         print('    -sfM --set-maximum-frequency FREQUENCY    set maximum frequency (root)')
         print('    -cpu CPU       Select which processor to affect with action,')
