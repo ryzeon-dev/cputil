@@ -158,7 +158,6 @@ def cpuFrequency():
     frequencies = list(round(float(freq.replace(',', '.')), 2) for freq in frequencies)
 
     average = round(sum(frequencies) / len(frequencies), 2)
-
     return average, frequencies
 
 def threadDistribution():
@@ -185,7 +184,7 @@ if __name__ == '__main__':
             print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI')
+        print('cputil: cpu util CLI v2.0.1')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -222,10 +221,9 @@ if __name__ == '__main__':
         else:
             print('Clock boost:\tnot available')
 
-        if FREQUENCIES is not None:
-            print('Minimum clock:\t' + str(round(min(tuple(int(freq) for freq in FREQUENCIES)) / 1000000, 1)) + ' GHz')
-            print('Maximum clock:\t' + str(round(max(tuple(int(freq) for freq in FREQUENCIES)) / 1000000, 1)) + ' GHz')
-    
+        print('Minimum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq')) / 1000000, 2)) + ' GHz')
+        print('Maximum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq')) / 1000000, 2)) + ' GHz')
+
     elif '-u' in args or '--usage' in args:
         usages = cpuUsage()
         averageFrequency, frequencies = cpuFrequency()
