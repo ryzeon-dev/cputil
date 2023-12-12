@@ -4,6 +4,7 @@ import os
 import sys
 import time
 from subprocess import getoutput as terminal
+import string
 
 DRIVER_DIR = '/sys/devices/system/cpu/cpufreq'
 GOVERNORS = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors').strip().split(' ')
@@ -14,7 +15,6 @@ if 'scaling_available_frequencies' in terminal('ls /sys/devices/system/cpu/cpufr
     FREQUENCIES = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies').strip().split(' ')
 elif 'cpuinfo_max_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/') and 'cpuinfo_min_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/'):
     FREQUENCIES = [terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq').strip(), terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq').strip()]
-
 
 def setGovernor(governor, cpu):
     if cpu is True:
@@ -163,9 +163,62 @@ def cpuFrequency():
 def threadDistribution():
     return terminal('grep "core id" -i /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip().split('\n')
 
+def cpuCache():
+    baseDir = '/sys/devices/system/cpu'
+    cpuDirs = terminal('ls /sys/devices/system/cpu | grep -i cpu').split('\n')
+
+    if 'cpufreq' in cpuDirs:
+        cpuDirs.remove('cpufreq')
+
+    if 'cpuidle' in cpuDirs:
+        cpuDirs.remove('cpuidle')
+
+    cpuCache = {}
+    for cpu in cpuDirs:
+        cpuCache[cpu] = {}
+
+        for cacheIndex in terminal(f'ls {baseDir}/{cpu}/cache | grep index -i').split('\n'):
+            size = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/size')
+            level = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/level')
+            sharing = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/shared_cpu_list')
+
+            if cpuCache [cpu].get(level) is not None:
+                cpuCache[cpu][level]['amount'] += int(size.replace('K', '').replace('k', ''))
+
+            else:
+                cpuCache[cpu][level] = {
+                    'amount' : int(size.replace('K', '').replace('k', '')),
+                    'shared' : sharing
+                }
+
+    return cpuCache
+
+def processorsFromRange(processorRange):
+    if '-' in processorRange:
+        splittedRange = processorRange.split('-')
+
+        start = int(splittedRange[0])
+        end = int(splittedRange[1])
+
+        return list(range(start, end + 1))
+    return list(int(element) for element in processorRange.split(','))
+
+def processorSort(processors):
+    sorted = [None] * len(processors)
+
+    for processor in processors:
+        processorName = list((chr if chr not in string.ascii_letters else '') for chr in processor)
+
+        index = int(''.join(processorName))
+        sorted[index] = processor
+
+    return sorted
+
 if __name__ == '__main__':
     args = sys.argv[1:]
     cpu = True
+
+    cpuCache()
 
     if not args:
         print('Available governors:')
@@ -177,14 +230,14 @@ if __name__ == '__main__':
             for frequency in FREQUENCIES:   
                 print('\t' + frequency)
 
-    
+
         print("\nCurrent status:")
         freqs = getCurrentFrequencies()
         for index, governor in getCurrentGovernors().items():
             print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v2.0.1')
+        print('cputil: cpu util CLI v2.1.0')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -224,6 +277,19 @@ if __name__ == '__main__':
         print('Minimum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq')) / 1000000, 2)) + ' GHz')
         print('Maximum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq')) / 1000000, 2)) + ' GHz')
 
+        cache = cpuCache()
+        threadDistribution = threadDistribution()
+
+        for index, processor in enumerate(processorSort(cache.keys())):
+            print(f'\nProcessor {index}:')
+            for cacheLevel in cache[processor]:
+                sharing = processorsFromRange(cache[processor][cacheLevel]["shared"])
+                sharing.remove(index)
+                amount = cache[processor][cacheLevel]["amount"]
+
+                print(f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
+            print(f'    Physical core: {threadDistribution[index]}')
+
     elif '-u' in args or '--usage' in args:
         usages = cpuUsage()
         averageFrequency, frequencies = cpuFrequency()
@@ -237,18 +303,21 @@ if __name__ == '__main__':
             print(f'Processor: {cpuIndex}')
             for label, percent in usage.items():
                 indent = '\t'
+
                 if len(label) <= 9:
                     indent += '\t'
                 print(f'    {label}:{indent}{percent} %')
+
             print(f'    Frequency:\t\t{frequency} MHz')
-            print(f'    Physical core:\t{processorDistribution[int(cpuIndex)].strip()}')
 
         else:
             print('Average:')
             for label, percent in usages[0].items():
                 indent = '\t'
+
                 if len(label) <= 9:
                     indent += '\t'
+
                 print(f'    {label}:{indent}{percent} %')
             print(f'    Frequency:\t\t{averageFrequency} MHz')
 
@@ -258,11 +327,12 @@ if __name__ == '__main__':
 
                     for label, percent in thread.items():
                         indent = '\t'
+
                         if len(label) <= 9:
                             indent += '\t'
+
                         print(f'    {label}:{indent}{percent} %')
                     print(f'    Frequency: \t\t{frequencies[index]} MHz' )
-                    print(f'    Physical core:\t{processorDistribution[index].strip()}')
 
     elif '-sg' in args or '--set-governor' in args: 
         if os.getuid():
@@ -278,7 +348,8 @@ if __name__ == '__main__':
         if '-cpu' in args:
             cpu = int(args[args.index('-cpu') + 1])
 
-        setGovernor(governor, cpu)
+        if not setGovernor(governor, cpu):
+            print('Error setting governor')
 
     elif '-sfm' in args or '--set-min-frequency' in args:
         if os.getuid():
@@ -293,8 +364,7 @@ if __name__ == '__main__':
         if '-cpu' in args:
             cpu = int(args[args.index('-cpu') + 1])
 
-        status = setMinFrequency(frequency, cpu)
-        if not status:
+        if not setMinFrequency(frequency, cpu):
             print('Error setting min frequency', file=sys.stderr)
         
 
@@ -311,6 +381,5 @@ if __name__ == '__main__':
         if '-cpu' in args:
             cpu = int(args[args.index('-cpu') + 1])
 
-        status = setMaxFrequency(frequency, cpu)
-        if not status:
+        if not setMaxFrequency(frequency, cpu):
             print('Error setting max frequency', file=sys.stderr)
