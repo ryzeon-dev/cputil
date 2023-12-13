@@ -17,11 +17,12 @@ elif 'cpuinfo_max_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/
     FREQUENCIES = [terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq').strip(), terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq').strip()]
 
 def setGovernor(governor, cpu):
-    if cpu is True:
-        if governor not in GOVERNORS:
-            return False
+    if governor not in GOVERNORS:
+        return False
 
+    if cpu is True:
         print('Setting governor for all processors to ' + governor)
+
         for policy in POLICIES:
             os.system(f'echo {governor} > {DRIVER_DIR}/{policy}/scaling_governor')
 
@@ -29,7 +30,7 @@ def setGovernor(governor, cpu):
     else:
         policy = f'policy{cpu}'
 
-        if policy in POLICIES and governor in GOVERNORS:
+        if policy in POLICIES:
             print('Setting governor for processor ' + str(cpu) + ' to ' + governor)
             os.system(f'echo {governor} > {DRIVER_DIR}/{policy}/scaling_governor')
             return True
@@ -42,7 +43,7 @@ def getCurrentGovernors():
 
     return governors
 
-def getCurrentFrequencies():
+def getCurrentScalingFrequencies():
     frequencies = {}
 
     for policy in POLICIES:
@@ -50,7 +51,7 @@ def getCurrentFrequencies():
 
     return frequencies
 
-def setMinFrequency(frequency, cpu):
+def setMinimumScalingFrequency(frequency, cpu):
     if FREQUENCIES is None:
         return False
     
@@ -71,32 +72,31 @@ def setMinFrequency(frequency, cpu):
 
         if policy in POLICIES:
             print('Setting for processor ' + str(cpu) + ' minimum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
-            command = f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_min_freq'
+
             os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_min_freq')
             return True
         return False
 
-def setMaxFrequency(frequency, cpu):
+def setMaximumScalingFrequency(frequency, cpu):
     if FREQUENCIES is None:
         return False
         
+    if frequency not in FREQUENCIES:
+        return False
+
     if cpu is True:
-        if frequency not in FREQUENCIES:
-            return False
 
         print('Setting for all processors maximum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
         for policy in POLICIES:
             os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_max_freq')
 
         return True
-
     else:
         policy = f'policy{cpu}'
-        if frequency not in FREQUENCIES:
-            return False
 
         if policy in POLICIES:
             print('Setting for processor ' + str(cpu) + ' maximum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
+
             os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_max_freq')
             return True
         return False
@@ -104,9 +104,11 @@ def setMaxFrequency(frequency, cpu):
 def makeListStructure(stat):
     for index, line in enumerate(stat):
         splitted = line.split(' ')
+
         for element in splitted:
             if element == '' or element == ' ':
                 splitted.remove(element)
+
         stat[index] = list(int(element) for element in splitted)
     return stat
 
@@ -145,7 +147,7 @@ def cpuUsage():
     afterStat = terminal('grep cpu -i /proc/stat | awk \'{ $1="" ; print }\'').strip().split('\n')
 
     beforeStat = makeListStructure(beforeStat)
-    afterstat = makeListStructure(afterStat)
+    afterStat = makeListStructure(afterStat)
 
     usages = []
     for i in range(len(beforeStat)):
@@ -182,7 +184,7 @@ def cpuCache():
             level = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/level')
             sharing = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/shared_cpu_list')
 
-            if cpuCache [cpu].get(level) is not None:
+            if cpuCache[cpu].get(level) is not None:
                 cpuCache[cpu][level]['amount'] += int(size.replace('K', '').replace('k', ''))
 
             else:
@@ -218,8 +220,6 @@ if __name__ == '__main__':
     args = sys.argv[1:]
     cpu = True
 
-    cpuCache()
-
     if not args:
         print('Available governors:')
         for governor in GOVERNORS:
@@ -230,14 +230,13 @@ if __name__ == '__main__':
             for frequency in FREQUENCIES:   
                 print('\t' + frequency)
 
-
         print("\nCurrent status:")
-        freqs = getCurrentFrequencies()
+        freqs = getCurrentScalingFrequencies()
         for index, governor in getCurrentGovernors().items():
             print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v2.1.0')
+        print('cputil: cpu util CLI v2.2.0')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -284,7 +283,13 @@ if __name__ == '__main__':
             print(f'\nProcessor {index}:')
             for cacheLevel in cache[processor]:
                 sharing = processorsFromRange(cache[processor][cacheLevel]["shared"])
-                sharing.remove(index)
+
+                if len(sharing) == int(threadCount):
+                    sharing = ['all']
+
+                else:
+                    sharing.remove(index)
+
                 amount = cache[processor][cacheLevel]["amount"]
 
                 print(f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
@@ -293,7 +298,6 @@ if __name__ == '__main__':
     elif '-u' in args or '--usage' in args:
         usages = cpuUsage()
         averageFrequency, frequencies = cpuFrequency()
-        processorDistribution = threadDistribution()
 
         if '-cpu' in args:
             cpuIndex = args[args.index('-cpu') + 1]
@@ -353,7 +357,7 @@ if __name__ == '__main__':
 
     elif '-sfm' in args or '--set-min-frequency' in args:
         if os.getuid():
-            print('Frequency setting requires root privilegies', file=sys.stderr)
+            print('Scaling frequency setting requires root privilegies', file=sys.stderr)
             sys.exit(0) 
 
         try:
@@ -364,13 +368,13 @@ if __name__ == '__main__':
         if '-cpu' in args:
             cpu = int(args[args.index('-cpu') + 1])
 
-        if not setMinFrequency(frequency, cpu):
+        if not setMinimumScalingFrequency(frequency, cpu):
             print('Error setting min frequency', file=sys.stderr)
         
 
     elif '-sfM' in args or '--set-max-frequency' in args:
         if os.getuid():
-            print('Frequency setting requires root privilegies', file=sys.stderr)
+            print('Scaling frequency setting requires root privilegies', file=sys.stderr)
             sys.exit(0) 
 
         try:
@@ -381,5 +385,5 @@ if __name__ == '__main__':
         if '-cpu' in args:
             cpu = int(args[args.index('-cpu') + 1])
 
-        if not setMaxFrequency(frequency, cpu):
+        if not setMaximumScalingFrequency(frequency, cpu):
             print('Error setting max frequency', file=sys.stderr)
