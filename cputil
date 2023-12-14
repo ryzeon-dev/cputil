@@ -231,12 +231,16 @@ if __name__ == '__main__':
                 print('\t' + frequency)
 
         print("\nCurrent status:")
-        freqs = getCurrentScalingFrequencies()
-        for index, governor in getCurrentGovernors().items():
-            print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
+        try:
+            freqs = getCurrentScalingFrequencies()
+        except:
+            pass
+        else:
+            for index, governor in getCurrentGovernors().items():
+                print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v2.2.0')
+        print('cputil: cpu util CLI v2.2.1')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -264,40 +268,56 @@ if __name__ == '__main__':
         threadCount = terminal('grep processor -c /proc/cpuinfo').strip()
         if threadCount:
             print('Threads count:\t' + threadCount)
-
-        if 'boost' in os.listdir(DRIVER_DIR):
-            if '1' in terminal(f'cat {DRIVER_DIR}/boost'):
-                print('Clock boost:\tactive')
-            else:
-                print('Clock boost:\tnot active')
-        else:
-            print('Clock boost:\tnot available')
-
-        print('Minimum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq')) / 1000000, 2)) + ' GHz')
-        print('Maximum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq')) / 1000000, 2)) + ' GHz')
-
-        cache = cpuCache()
-        threadDistribution = threadDistribution()
-
-        for index, processor in enumerate(processorSort(cache.keys())):
-            print(f'\nProcessor {index}:')
-            for cacheLevel in cache[processor]:
-                sharing = processorsFromRange(cache[processor][cacheLevel]["shared"])
-
-                if len(sharing) == int(threadCount):
-                    sharing = ['all']
-
+        try:
+            if 'boost' in os.listdir(DRIVER_DIR):
+                if '1' in terminal(f'cat {DRIVER_DIR}/boost'):
+                    print('Clock boost:\tactive')
                 else:
-                    sharing.remove(index)
+                    print('Clock boost:\tnot active')
+            else:
+                print('Clock boost:\tnot available')
+        except:
+            pass
 
-                amount = cache[processor][cacheLevel]["amount"]
+        try:
+            print('Minimum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq')) / 1000000, 2)) + ' GHz')
+        except:
+            pass
 
-                print(f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
-            print(f'    Physical core: {threadDistribution[index]}')
+        try:
+            print('Maximum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq')) / 1000000, 2)) + ' GHz')
+        except:
+            pass
+
+        try:
+            cache = cpuCache()
+            threadDistribution = threadDistribution()
+
+        except:
+            pass
+
+        else:
+            for index, processor in enumerate(processorSort(cache.keys())):
+                print(f'\nProcessor {index}:')
+                for cacheLevel in cache[processor]:
+                    sharing = processorsFromRange(cache[processor][cacheLevel]["shared"])
+
+                    if len(sharing) == int(threadCount):
+                        sharing = ['all']
+
+                    else:
+                        sharing.remove(index)
+                    amount = cache[processor][cacheLevel]["amount"]
+
+                    print(f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
+                print(f'    Physical core: {threadDistribution[index]}')
 
     elif '-u' in args or '--usage' in args:
-        usages = cpuUsage()
-        averageFrequency, frequencies = cpuFrequency()
+        try:
+            usages = cpuUsage()
+            averageFrequency, frequencies = cpuFrequency()
+        except:
+            sys.exit(0)
 
         if '-cpu' in args:
             cpuIndex = args[args.index('-cpu') + 1]
