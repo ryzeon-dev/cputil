@@ -240,7 +240,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v2.2.1')
+        print('cputil: cpu util CLI v2.3.0')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -407,3 +407,12 @@ if __name__ == '__main__':
 
         if not setMaximumScalingFrequency(frequency, cpu):
             print('Error setting max frequency', file=sys.stderr)
+
+    else:
+        arg = args[0]
+
+        if arg[0] == '-':
+            print(f'Error: unrecognised option "{arg}"')
+
+        else:
+            print(f'Error: unrecognised argument "{arg}"')
