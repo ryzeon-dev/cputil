@@ -13,7 +13,9 @@ POLICIES = terminal('ls ' + DRIVER_DIR + ' | grep policy').strip().split('\n')
 FREQUENCIES = None
 if 'scaling_available_frequencies' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/'):
     FREQUENCIES = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies').strip().split(' ')
-elif 'cpuinfo_max_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/') and 'cpuinfo_min_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/'):
+
+elif 'cpuinfo_max_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/') and \
+     'cpuinfo_min_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/'):
     FREQUENCIES = [terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq').strip(), terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq').strip()]
 
 def setGovernor(governor, cpu):
@@ -33,6 +35,7 @@ def setGovernor(governor, cpu):
         if policy in POLICIES:
             print('Setting governor for processor ' + str(cpu) + ' to ' + governor)
             os.system(f'echo {governor} > {DRIVER_DIR}/{policy}/scaling_governor')
+
             return True
         return False
 
@@ -47,7 +50,10 @@ def getCurrentScalingFrequencies():
     frequencies = {}
 
     for policy in POLICIES:
-        frequencies[policy] = {'min' : terminal(f'cat {DRIVER_DIR}/{policy}/scaling_min_freq'), 'max' : terminal(f'cat {DRIVER_DIR}/{policy}/scaling_max_freq')}
+        frequencies[policy] = {
+            'min' : terminal(f'cat {DRIVER_DIR}/{policy}/scaling_min_freq'),
+            'max' : terminal(f'cat {DRIVER_DIR}/{policy}/scaling_max_freq')
+        }
 
     return frequencies
 
@@ -112,15 +118,15 @@ def makeListStructure(stat):
         stat[index] = list(int(element) for element in splitted)
     return stat
 
-usageContexts = {
-    0 : 'user',
-    1 : 'nice',
-    2 : 'system',
-    3 : 'idle',
-    4 : 'iowait',
-    5 : 'interrupt',
-    6 : 'soft-interrupt'
-}
+usageContexts = [
+    'user',
+    'nice',
+    'system',
+    'idle',
+    'iowait',
+    'interrupt',
+    'soft-interrupt'
+]
 
 def getParameterUsage(beforeStat, afterStat):
     usage = {}
@@ -157,7 +163,12 @@ def cpuUsage():
 
 def cpuFrequency():
     frequencies = terminal('grep "cpu MHZ" -i /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip().split('\n')
-    frequencies = list(round(float(freq.replace(',', '.')), 2) for freq in frequencies)
+    frequencies = list(
+        round(
+            float(freq.replace(',', '.')),
+            2
+        ) for freq in frequencies
+    )
 
     average = round(sum(frequencies) / len(frequencies), 2)
     return average, frequencies
@@ -181,6 +192,7 @@ def cpuCache():
 
         for cacheIndex in terminal(f'ls {baseDir}/{cpu}/cache | grep index -i').split('\n'):
             size = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/size')
+
             level = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/level')
             sharing = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/shared_cpu_list')
 
@@ -222,19 +234,23 @@ if __name__ == '__main__':
 
     if not args:
         print('Available governors:')
+
         for governor in GOVERNORS:
             print('\t' + governor)
 
         if FREQUENCIES is not None:
             print('\nAvailable scaling frequencies:')
+
             for frequency in FREQUENCIES:   
                 print('\t' + frequency)
 
         print("\nCurrent status:")
         try:
             freqs = getCurrentScalingFrequencies()
+
         except:
             pass
+
         else:
             for index, governor in getCurrentGovernors().items():
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
@@ -268,6 +284,7 @@ if __name__ == '__main__':
         threadCount = terminal('grep processor -c /proc/cpuinfo').strip()
         if threadCount:
             print('Threads count:\t' + threadCount)
+
         try:
             if 'boost' in os.listdir(DRIVER_DIR):
                 if '1' in terminal(f'cat {DRIVER_DIR}/boost'):
@@ -299,6 +316,7 @@ if __name__ == '__main__':
         else:
             for index, processor in enumerate(processorSort(cache.keys())):
                 print(f'\nProcessor {index}:')
+
                 for cacheLevel in cache[processor]:
                     sharing = processorsFromRange(cache[processor][cacheLevel]["shared"])
 
@@ -316,11 +334,13 @@ if __name__ == '__main__':
         try:
             usages = cpuUsage()
             averageFrequency, frequencies = cpuFrequency()
+
         except:
             sys.exit(0)
 
         if '-cpu' in args:
             cpuIndex = args[args.index('-cpu') + 1]
+
             usage = usages[int(cpuIndex) + 1]
             frequency = frequencies[int(cpuIndex)]
 
@@ -330,12 +350,13 @@ if __name__ == '__main__':
 
                 if len(label) <= 9:
                     indent += '\t'
-                print(f'    {label}:{indent}{percent} %')
 
+                print(f'    {label}:{indent}{percent} %')
             print(f'    Frequency:\t\t{frequency} MHz')
 
         else:
             print('Average:')
+
             for label, percent in usages[0].items():
                 indent = '\t'
 
@@ -382,6 +403,7 @@ if __name__ == '__main__':
 
         try:
             frequency = args[args.index('-sfm') + 1]
+
         except:
             frequency = args[args.index('--set-min-frequency') + 1]
 
@@ -399,6 +421,7 @@ if __name__ == '__main__':
 
         try:
             frequency = args[args.index('-sfM') + 1]
+
         except:
             frequency = args[args.index('--set-max-frequency') + 1]
 
