@@ -60,7 +60,7 @@ def getCurrentScalingFrequencies():
 def setMinimumScalingFrequency(frequency, cpu):
     if FREQUENCIES is None:
         return False
-    
+
     if cpu is True:
         if frequency not in FREQUENCIES:
             return False
@@ -86,7 +86,7 @@ def setMinimumScalingFrequency(frequency, cpu):
 def setMaximumScalingFrequency(frequency, cpu):
     if FREQUENCIES is None:
         return False
-        
+
     if frequency not in FREQUENCIES:
         return False
 
@@ -106,7 +106,37 @@ def setMaximumScalingFrequency(frequency, cpu):
             os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_max_freq')
             return True
         return False
-    
+
+def getModelName():
+    return terminal('grep "model name" -i -m 1 /proc/cpuinfo | awk -F \':\'  \'{ print $2 }\'').strip()
+
+def getArchitecture():
+    return 'amd64 / x86_64 (64 bit)' if sys.maxsize == (2 ** 63 - 1) else 'i386 / i686 (32 bit)'
+
+def getCoreCount():
+    return terminal('grep "cpu cores" -i -m 1 /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip()
+
+def getThreadCount():
+    return terminal('grep processor -c /proc/cpuinfo').strip()
+
+def getClockBoost():
+    try:
+        if 'boost' in os.listdir(DRIVER_DIR):
+            if '1' in terminal(f'cat {DRIVER_DIR}/boost'):
+                return 'active'
+            else:
+                return 'not active'
+        else:
+            return 'not available'
+    except:
+        return 'not available'
+
+def getMinimumClock():
+    return round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq')) / 1000000, 2)
+
+def getMaximumClock():
+    return round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq')) / 1000000, 2)
+
 def makeListStructure(stat):
     for index, line in enumerate(stat):
         splitted = line.split(' ')
@@ -140,7 +170,7 @@ def getParameterUsage(beforeStat, afterStat):
     totalUsagePercent = (total - (afterIdle - beforeIdle)) * 100 / total
     usage['total'] = round(totalUsagePercent, 2)
 
-    for index, label in usageContexts.items():
+    for index, label in enumerate(usageContexts):
         usage[label] = round(
             100 - (total - (afterStat[index] - beforeStat[index])) * 100 / total, 2
         )
@@ -228,6 +258,71 @@ def processorSort(processors):
 
     return sorted
 
+def wrap(string):
+    return '"' + string  + '"'
+
+def jsonFormat():
+    json = {}
+
+    json[wrap("model name")] = wrap(getModelName())
+    json[wrap('architecture')] = wrap(getArchitecture())
+
+    json[wrap('core count')] = int(getCoreCount())
+    json[wrap('thread count')] = int(getThreadCount())
+
+    json[wrap('clock boost')] = wrap(getClockBoost())
+    json[wrap('minimum frequency')] = int(float(getMinimumClock()) * 1000)
+    json[wrap('maximum frequency')] = int(float(getMaximumClock()) * 1000)
+
+    json[wrap('governors')] = [ wrap(governor) for governor in GOVERNORS ]
+    json[wrap('scaling frequencies')] = [ int(frequency) for frequency in FREQUENCIES ]
+
+    usages = cpuUsage()
+    averageFrequency, frequencies = cpuFrequency()
+
+    cache = cpuCache()
+    threadDist = threadDistribution()
+
+    json[wrap('average')] = {
+        wrap("usage") : {}
+    }
+
+    for label, percent in usages.pop(0).items():
+        json[wrap('average')][wrap('usage')][wrap(label)] = float(percent)
+
+    json[wrap('average')][wrap('frequency')] = int(averageFrequency)
+
+    sortedCache = processorSort(cache.keys())
+    for index, processor in enumerate(usages):
+
+        processorId = wrap('processor' + str(index))
+        json[processorId]= {
+            wrap('usage') : {},
+            wrap('frequency') : '',
+            wrap('cache') : {},
+            wrap('physical core') : '',
+        }
+
+        for label, percent in processor.items():
+            json[processorId][wrap('usage')][wrap(label)] = float(percent)
+
+        json[processorId][wrap('frequency')] = int(frequencies[index])
+        json[processorId][wrap('physical core')] = int(threadDist[index])
+
+        processorCacheKey = sortedCache[index]
+        for cacheLevel in cache[processorCacheKey]:
+
+            sharing = processorsFromRange(cache[processorCacheKey][cacheLevel]['shared'])
+            if len(sharing) == int(getThreadCount()):
+                sharing = ['all']
+
+            json[processorId][wrap('cache')][wrap('L' + str(cacheLevel))] = {
+                wrap('sharing') : [", ".join( wrap(str(processor)) for processor in sharing )],
+                wrap("amount") : int(cache[processorCacheKey][cacheLevel]['amount'])
+            }
+
+    return json
+
 if __name__ == '__main__':
     args = sys.argv[1:]
     cpu = True
@@ -256,7 +351,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v2.3.0')
+        print('cputil: cpu util CLI v3.0.0')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -269,15 +364,19 @@ if __name__ == '__main__':
         print('    -u   --usage   Show CPU usage')
         print('    -avg           If specified, only average usage is shown,')
         print('                   to be used only with -u')
+        print('    -j   --json    Outputs all the available informations in json format')
+
+    elif '-j' in args or '--json' in args:
+        print(jsonFormat().__repr__().replace("'", ''))
 
     elif '-i' in args or '--info' in args:
-        model = terminal('grep "model name" -i -m 1 /proc/cpuinfo | awk -F \':\'  \'{ print $2 }\'').strip()
+        model = getModelName()
         if model:
             print('Model name:\t' + model)
 
         print('Architecture:\t' + ('amd64 / x86_64 (64 bit)' if sys.maxsize == (2 ** 63 - 1) else 'i386 / i686 (32 bit)'))
 
-        coreCount = terminal('grep "cpu cores" -i -m 1 /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip()
+        coreCount = getCoreCount()
         if coreCount:
             print('Cores count:\t' + coreCount)
 
@@ -285,16 +384,7 @@ if __name__ == '__main__':
         if threadCount:
             print('Threads count:\t' + threadCount)
 
-        try:
-            if 'boost' in os.listdir(DRIVER_DIR):
-                if '1' in terminal(f'cat {DRIVER_DIR}/boost'):
-                    print('Clock boost:\tactive')
-                else:
-                    print('Clock boost:\tnot active')
-            else:
-                print('Clock boost:\tnot available')
-        except:
-            pass
+        print(f'Clock boost:\t{getClockBoost()}')
 
         try:
             print('Minimum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq')) / 1000000, 2)) + ' GHz')
@@ -412,7 +502,7 @@ if __name__ == '__main__':
 
         if not setMinimumScalingFrequency(frequency, cpu):
             print('Error setting min frequency', file=sys.stderr)
-        
+
 
     elif '-sfM' in args or '--set-max-frequency' in args:
         if os.getuid():

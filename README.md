@@ -3,7 +3,7 @@ CPU performance utils and information tool CLI written in Python
 
 ```
 $ cputil --help
-cputil: cpu util CLI v2.3.1
+cputil: cpu util CLI v3.0.0
 usage: cputil [OPTIONS]
 
 Options:
@@ -17,6 +17,7 @@ Options:
 -u   --usage   Show CPU usage
 -avg           If specified, only average usage is shown,
                to be used only with -u
+-j   --json    Outputs all the available informations in json format
 ```
 
 ## Example outputs
