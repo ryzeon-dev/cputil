@@ -51,8 +51,8 @@ def getCurrentScalingFrequencies():
 
     for policy in POLICIES:
         frequencies[policy] = {
-            'min' : terminal(f'cat {DRIVER_DIR}/{policy}/scaling_min_freq'),
-            'max' : terminal(f'cat {DRIVER_DIR}/{policy}/scaling_max_freq')
+            'min' : terminal(f'cat {DRIVER_DIR}/{policy}/scaling_min_freq') if 'scaling_min_freq' in terminal(f'ls {DRIVER_DIR}/{policy}') else '',
+            'max' : terminal(f'cat {DRIVER_DIR}/{policy}/scaling_max_freq') if 'scaling_max_freq' in terminal(f'ls {DRIVER_DIR}/{policy}') else ''
         }
 
     return frequencies
@@ -204,7 +204,39 @@ def cpuFrequency():
     return average, frequencies
 
 def threadDistribution():
-    return terminal('grep "core id" -i /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip().split('\n')
+    driverDir = '/sys/devices/system/cpu'
+    processors = {}
+
+    for dir in os.listdir(driverDir):
+        if dir.replace('cpu', '') and dir.replace('cpu', '')[0] not in string.ascii_letters:
+            if 'topology' not in terminal(f'ls {driverDir}/{dir}') or \
+               'core_id' not in terminal(f'ls {driverDir}/{dir}/topology'):
+                return []
+            processors[dir] = terminal(f'cat {driverDir}/{dir}/topology/core_id')
+
+    res = []
+    for processor in processorSort(processors.keys()):
+        res.append(processors[processor])
+
+    return res
+
+def processorDieDistribution():
+    driverDir = '/sys/devices/system/cpu'
+    processors = {}
+
+    for dir in os.listdir(driverDir):
+        if dir.replace('cpu', '') and dir.replace('cpu', '')[0] not in string.ascii_letters:
+            if 'topology' not in terminal(f'ls {driverDir}/{dir}') or \
+               'die_id' not in terminal(f'ls {driverDir}/{dir}/topology'):
+                return []
+            processors[dir] = terminal(f'cat {driverDir}/{dir}/topology/die_id')
+
+    res = []
+    for processor in processorSort(processors.keys()):
+        res.append(processors[processor])
+
+    return res
+
 
 def cpuCache():
     baseDir = '/sys/devices/system/cpu'
@@ -282,6 +314,8 @@ def jsonFormat():
 
     cache = cpuCache()
     threadDist = threadDistribution()
+    dieDist = processorDieDistribution()
+
 
     json[wrap('average')] = {
         wrap("usage") : {}
@@ -301,6 +335,7 @@ def jsonFormat():
             wrap('frequency') : '',
             wrap('cache') : {},
             wrap('physical core') : '',
+            wrap('physical die') : ''
         }
 
         for label, percent in processor.items():
@@ -308,6 +343,7 @@ def jsonFormat():
 
         json[processorId][wrap('frequency')] = int(frequencies[index])
         json[processorId][wrap('physical core')] = int(threadDist[index])
+        json[processorId][wrap('physical die')] = int(dieDist[index])
 
         processorCacheKey = sortedCache[index]
         for cacheLevel in cache[processorCacheKey]:
@@ -351,7 +387,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.0.1')
+        print('cputil: cpu util CLI v3.1.0')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -394,25 +430,38 @@ if __name__ == '__main__':
 
         try:
             cache = cpuCache()
+        except: sys.exit(0)
+
+        try:
             threadDistribution = threadDistribution()
-        except: pass
+        except:
+            threadDistribution = None
 
-        else:
-            for index, processor in enumerate(processorSort(cache.keys())):
-                print(f'\nProcessor {index}:')
+        try:
+            dieDistribution = processorDieDistribution()
+        except:
+            dieDistribution = None
 
-                for cacheLevel in cache[processor]:
-                    sharing = processorsFromRange(cache[processor][cacheLevel]["shared"])
+        for index, processor in enumerate(processorSort(cache.keys())):
+            print(f'\nProcessor {index}:')
 
-                    if len(sharing) == int(threadCount):
-                        sharing = ['all']
+            for cacheLevel in cache[processor]:
+                sharing = processorsFromRange(cache[processor][cacheLevel]["shared"])
 
-                    else:
-                        sharing.remove(index)
-                    amount = cache[processor][cacheLevel]["amount"]
+                if len(sharing) == int(threadCount):
+                    sharing = ['all']
 
-                    print(f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
+                else:
+                    sharing.remove(index)
+                amount = cache[processor][cacheLevel]["amount"]
+
+                print(f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
+
+            if threadDistribution is not None:
                 print(f'    Physical core: {threadDistribution[index]}')
+
+            if dieDistribution is not None:
+                print(f'    Physical die: {dieDistribution[index]}')
 
     elif '-u' in args or '--usage' in args:
         try:
@@ -425,7 +474,7 @@ if __name__ == '__main__':
         if '-cpu' in args:
             cpuIndex = args[args.index('-cpu') + 1]
 
-            usage = usages[int(cpuIndex) + 1]
+            usage = usages[int(cpuIndevx) + 1]
             frequency = frequencies[int(cpuIndex)]
 
             print(f'Processor: {cpuIndex}')

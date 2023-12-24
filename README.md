@@ -3,7 +3,7 @@ CPU performance utils and information tool CLI written in Python
 
 ```
 $ cputil --help
-cputil: cpu util CLI v3.0.1
+cputil: cpu util CLI v3.1.0
 usage: cputil [OPTIONS]
 
 Options:
