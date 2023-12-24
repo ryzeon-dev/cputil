@@ -351,7 +351,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.0.0')
+        print('cputil: cpu util CLI v3.0.1')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -374,34 +374,28 @@ if __name__ == '__main__':
         if model:
             print('Model name:\t' + model)
 
-        print('Architecture:\t' + ('amd64 / x86_64 (64 bit)' if sys.maxsize == (2 ** 63 - 1) else 'i386 / i686 (32 bit)'))
+        print('Architecture:\t' + getArchitecture())
 
         coreCount = getCoreCount()
         if coreCount:
             print('Cores count:\t' + coreCount)
 
-        threadCount = terminal('grep processor -c /proc/cpuinfo').strip()
+        threadCount = getThreadCount()
         if threadCount:
-            print('Threads count:\t' + threadCount)
+            print('Threads count:\t' + str(threadCount))
 
         print(f'Clock boost:\t{getClockBoost()}')
 
-        try:
-            print('Minimum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq')) / 1000000, 2)) + ' GHz')
-        except:
-            pass
+        try:    print('Minimum clock:\t' + str(getMinimumClock()) + ' GHz')
+        except: pass
 
-        try:
-            print('Maximum clock:\t' + str(round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq')) / 1000000, 2)) + ' GHz')
-        except:
-            pass
+        try:    print('Maximum clock:\t' + str(getMaximumClock()) + ' GHz')
+        except: pass
 
         try:
             cache = cpuCache()
             threadDistribution = threadDistribution()
-
-        except:
-            pass
+        except: pass
 
         else:
             for index, processor in enumerate(processorSort(cache.keys())):
@@ -471,14 +465,12 @@ if __name__ == '__main__':
 
     elif '-sg' in args or '--set-governor' in args: 
         if os.getuid():
+
             print('Governor setting requires root privilegies', file=sys.stderr)
             sys.exit(0) 
 
-        try:
-            governor = args[args.index('-sg') + 1]
-
-        except:
-            governor = args[args.index('--set-governor') + 1]
+        try:    governor = args[args.index('-sg') + 1]
+        except: governor = args[args.index('--set-governor') + 1]
 
         if '-cpu' in args:
             cpu = int(args[args.index('-cpu') + 1])
@@ -491,11 +483,8 @@ if __name__ == '__main__':
             print('Scaling frequency setting requires root privilegies', file=sys.stderr)
             sys.exit(0) 
 
-        try:
-            frequency = args[args.index('-sfm') + 1]
-
-        except:
-            frequency = args[args.index('--set-min-frequency') + 1]
+        try:    frequency = args[args.index('-sfm') + 1]
+        except: frequency = args[args.index('--set-min-frequency') + 1]
 
         if '-cpu' in args:
             cpu = int(args[args.index('-cpu') + 1])
@@ -503,17 +492,13 @@ if __name__ == '__main__':
         if not setMinimumScalingFrequency(frequency, cpu):
             print('Error setting min frequency', file=sys.stderr)
 
-
     elif '-sfM' in args or '--set-max-frequency' in args:
         if os.getuid():
             print('Scaling frequency setting requires root privilegies', file=sys.stderr)
             sys.exit(0) 
 
-        try:
-            frequency = args[args.index('-sfM') + 1]
-
-        except:
-            frequency = args[args.index('--set-max-frequency') + 1]
+        try:    frequency = args[args.index('-sfM') + 1]
+        except: frequency = args[args.index('--set-max-frequency') + 1]
 
         if '-cpu' in args:
             cpu = int(args[args.index('-cpu') + 1])
