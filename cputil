@@ -3,8 +3,17 @@
 import os
 import sys
 import time
-from subprocess import getoutput as terminal
+import platform
+from subprocess import getstatusoutput
 import string
+
+def terminal(cmd):
+    statusCode, output = getstatusoutput(cmd)
+
+    if statusCode != 0:
+        raise Exception('Non 0 return code from console')
+
+    return output
 
 DRIVER_DIR = '/sys/devices/system/cpu/cpufreq'
 GOVERNORS = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors').strip().split(' ')
@@ -12,11 +21,22 @@ POLICIES = terminal('ls ' + DRIVER_DIR + ' | grep policy').strip().split('\n')
 
 FREQUENCIES = None
 if 'scaling_available_frequencies' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/'):
-    FREQUENCIES = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_frequencies').strip().split(' ')
+    FREQUENCIES = max((
+        scalingFreqs for scalingFreqs in
+            terminal('cat /sys/devices/system/cpu/cpufreq/policy*/scaling_available_frequencies').strip().split('\n')),
+        key=len
+    ).strip().split(' ')
 
 elif 'cpuinfo_max_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/') and \
      'cpuinfo_min_freq' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/'):
-    FREQUENCIES = [terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq').strip(), terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq').strip()]
+    FREQUENCIES = [
+        min(
+            int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_min_freq').strip().split('\n')
+        ),
+        max(
+            int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_max_freq').strip().split('\n')
+        )
+    ]
 
 def setGovernor(governor, cpu):
     if governor not in GOVERNORS:
@@ -111,7 +131,26 @@ def getModelName():
     return terminal('grep "model name" -i -m 1 /proc/cpuinfo | awk -F \':\'  \'{ print $2 }\'').strip()
 
 def getArchitecture():
-    return 'amd64 / x86_64 (64 bit)' if sys.maxsize == (2 ** 63 - 1) else 'i386 / i686 (32 bit)'
+    arch = platform.machine()
+
+    if arch == 'x86_64':
+        arch = 'amd64 / x86_64'
+
+    elif arch == 'i386':
+        arch = 'i386 / i686'
+
+    elif arch == 'aarch64':
+        arch = 'arm64 / aarch64'
+
+    elif not arch:
+        'amd64 / x86_64 ' if sys.maxsize == (2 ** 63 - 1) else 'i386 / i686'
+
+    busSize = platform.architecture()[0]
+
+    if not busSize:
+        busSize = '64 it' if sys.maxsize == (2 ** 63 - 1) else '32bit'
+
+    return f'{arch} ({busSize})'
 
 def getCoreCount():
     return terminal('grep "cpu cores" -i -m 1 /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip()
@@ -132,10 +171,15 @@ def getClockBoost():
         return 'not available'
 
 def getMinimumClock():
-    return round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_min_freq')) / 1000000, 2)
+    return round(min(
+        int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_min_freq').strip().split('\n')
+    ) / 1000000, 2)
+
 
 def getMaximumClock():
-    return round(int(terminal(f'cat {DRIVER_DIR}/policy0/cpuinfo_max_freq')) / 1000000, 2)
+    return round(max(
+        int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_max_freq').strip().split('\n')
+    ) / 1000000, 2)
 
 def makeListStructure(stat):
     for index, line in enumerate(stat):
@@ -474,7 +518,7 @@ if __name__ == '__main__':
         if '-cpu' in args:
             cpuIndex = args[args.index('-cpu') + 1]
 
-            usage = usages[int(cpuIndevx) + 1]
+            usage = usages[int(cpuIndex) + 1]
             frequency = frequencies[int(cpuIndex)]
 
             print(f'Processor: {cpuIndex}')
