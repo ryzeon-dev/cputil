@@ -380,7 +380,11 @@ def jsonFormat():
     usages = cpuUsage()
     averageFrequency, frequencies = cpuFrequency()
 
-    cache = cpuCache()
+    try:
+        cache = cpuCache()
+    except:
+        cache = None
+
     threadDist = threadDistribution()
     dieDist = processorDieDistribution()
 
@@ -412,17 +416,18 @@ def jsonFormat():
         json[processorId][wrap('physical core')] = int(threadDist[index])
         json[processorId][wrap('physical die')] = int(dieDist[index]) if dieDist else None
 
-        processorCacheKey = sortedCache[index]
-        for cacheLevel in cache[processorCacheKey]:
+        if cache is not None:
+            processorCacheKey = sortedCache[index]
+            for cacheLevel in cache[processorCacheKey]:
 
-            sharing = processorsFromRange(cache[processorCacheKey][cacheLevel]['shared'])
-            if len(sharing) == int(getThreadCount()):
-                sharing = ['all']
+                sharing = processorsFromRange(cache[processorCacheKey][cacheLevel]['shared'])
+                if len(sharing) == int(getThreadCount()):
+                    sharing = ['all']
 
-            json[processorId][wrap('cache')][wrap('L' + str(cacheLevel))] = {
-                wrap('sharing') : [", ".join( wrap(str(processor)) for processor in sharing )],
-                wrap("amount") : int(cache[processorCacheKey][cacheLevel]['amount'])
-            }
+                json[processorId][wrap('cache')][wrap('L' + str(cacheLevel))] = {
+                    wrap('sharing') : [", ".join( wrap(str(processor)) for processor in sharing )],
+                    wrap("amount") : int(cache[processorCacheKey][cacheLevel]['amount'])
+                }
 
     return json
 
@@ -454,7 +459,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.2.0')
+        print('cputil: cpu util CLI v3.2.1')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
