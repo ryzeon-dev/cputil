@@ -18,6 +18,7 @@ def terminal(cmd):
 DRIVER_DIR = '/sys/devices/system/cpu/cpufreq'
 GOVERNORS = terminal('cat /sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors').strip().split(' ')
 POLICIES = terminal('ls ' + DRIVER_DIR + ' | grep policy').strip().split('\n')
+GENERAL_DRIVER = '/sys/devices/system/cpu/'
 
 FREQUENCIES = None
 if 'scaling_available_frequencies' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/'):
@@ -152,8 +153,26 @@ def getArchitecture():
 
     return f'{arch} ({busSize})'
 
+def getDistinct(list):
+    distinct = []
+
+    for element in list:
+        if element not in distinct:
+            distinct.append(element)
+
+    return distinct
+
 def getCoreCount():
-    return terminal('grep "cpu cores" -i -m 1 /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip()
+    coreCount = terminal('grep "cpu cores" -i -m 1 /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip()
+    if coreCount:
+        return coreCount
+
+    try:
+        cores = terminal(f'cat {GENERAL_DRIVER}/cpu*/topology/core_id').strip().split('\n')
+    except:
+        return ''
+
+    return str(len(cores))
 
 def getThreadCount():
     return terminal('grep processor -c /proc/cpuinfo').strip()
@@ -237,6 +256,10 @@ def cpuUsage():
 
 def cpuFrequency():
     frequencies = terminal('grep "cpu MHZ" -i /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip().split('\n')
+
+    if not frequencies or frequencies == ['']:
+        return None, None
+
     frequencies = list(
         round(
             float(freq.replace(',', '.')),
@@ -270,9 +293,11 @@ def processorDieDistribution():
 
     for dir in os.listdir(driverDir):
         if dir.replace('cpu', '') and dir.replace('cpu', '')[0] not in string.ascii_letters:
+
             if 'topology' not in terminal(f'ls {driverDir}/{dir}') or \
                'die_id' not in terminal(f'ls {driverDir}/{dir}/topology'):
-                return []
+                return None
+
             processors[dir] = terminal(f'cat {driverDir}/{dir}/topology/die_id')
 
     res = []
@@ -280,7 +305,6 @@ def processorDieDistribution():
         res.append(processors[processor])
 
     return res
-
 
 def cpuCache():
     baseDir = '/sys/devices/system/cpu'
@@ -360,7 +384,6 @@ def jsonFormat():
     threadDist = threadDistribution()
     dieDist = processorDieDistribution()
 
-
     json[wrap('average')] = {
         wrap("usage") : {}
     }
@@ -368,7 +391,7 @@ def jsonFormat():
     for label, percent in usages.pop(0).items():
         json[wrap('average')][wrap('usage')][wrap(label)] = float(percent)
 
-    json[wrap('average')][wrap('frequency')] = int(averageFrequency)
+    json[wrap('average')][wrap('frequency')] = int(averageFrequency) if averageFrequency else None
 
     sortedCache = processorSort(cache.keys())
     for index, processor in enumerate(usages):
@@ -385,9 +408,9 @@ def jsonFormat():
         for label, percent in processor.items():
             json[processorId][wrap('usage')][wrap(label)] = float(percent)
 
-        json[processorId][wrap('frequency')] = int(frequencies[index])
+        json[processorId][wrap('frequency')] = int(frequencies[index]) if frequencies else None
         json[processorId][wrap('physical core')] = int(threadDist[index])
-        json[processorId][wrap('physical die')] = int(dieDist[index])
+        json[processorId][wrap('physical die')] = int(dieDist[index]) if dieDist else None
 
         processorCacheKey = sortedCache[index]
         for cacheLevel in cache[processorCacheKey]:
@@ -431,7 +454,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.1.1')
+        print('cputil: cpu util CLI v3.2.0')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -497,6 +520,10 @@ if __name__ == '__main__':
 
                 else:
                     sharing.remove(index)
+
+                    if not sharing:
+                        sharing = ['none']
+
                 amount = cache[processor][cacheLevel]["amount"]
 
                 print(f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
@@ -512,14 +539,15 @@ if __name__ == '__main__':
             usages = cpuUsage()
             averageFrequency, frequencies = cpuFrequency()
 
-        except:
+        except KeyboardInterrupt:
             sys.exit(0)
 
         if '-cpu' in args:
             cpuIndex = args[args.index('-cpu') + 1]
 
             usage = usages[int(cpuIndex) + 1]
-            frequency = frequencies[int(cpuIndex)]
+            if frequencies:
+                frequency = frequencies[int(cpuIndex)]
 
             print(f'Processor: {cpuIndex}')
             for label, percent in usage.items():
@@ -529,7 +557,9 @@ if __name__ == '__main__':
                     indent += '\t'
 
                 print(f'    {label}:{indent}{percent} %')
-            print(f'    Frequency:\t\t{frequency} MHz')
+
+            if frequencies:
+                print(f'    Frequency:\t\t{frequency} MHz')
 
         else:
             print('Average:')
@@ -541,7 +571,9 @@ if __name__ == '__main__':
                     indent += '\t'
 
                 print(f'    {label}:{indent}{percent} %')
-            print(f'    Frequency:\t\t{averageFrequency} MHz')
+
+            if averageFrequency:
+                print(f'    Frequency:\t\t{averageFrequency} MHz')
 
             if '-avg' not in args:
                 for index, thread in enumerate(usages[1:]):
@@ -554,7 +586,9 @@ if __name__ == '__main__':
                             indent += '\t'
 
                         print(f'    {label}:{indent}{percent} %')
-                    print(f'    Frequency: \t\t{frequencies[index]} MHz' )
+
+                    if frequencies:
+                        print(f'    Frequency: \t\t{frequencies[index]} MHz' )
 
     elif '-sg' in args or '--set-governor' in args: 
         if os.getuid():
