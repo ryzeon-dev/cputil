@@ -21,7 +21,7 @@ POLICIES = terminal('ls ' + DRIVER_DIR + ' | grep policy').strip().split('\n')
 GENERAL_DRIVER = '/sys/devices/system/cpu/'
 
 FREQUENCIES = None
-if 'scaling_available_frequencies' in terminal('ls /sys/devices/system/cpu/cpufreq/policy0/'):
+if 'scaling_available_frequencies' in terminal('ls /sys/devices/system/cpu/cpufreq/policy*/'):
     FREQUENCIES = max((
         scalingFreqs for scalingFreqs in
             terminal('cat /sys/devices/system/cpu/cpufreq/policy*/scaling_available_frequencies').strip().split('\n')),
@@ -163,16 +163,12 @@ def getDistinct(list):
     return distinct
 
 def getCoreCount():
-    coreCount = terminal('grep "cpu cores" -i -m 1 /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip()
-    if coreCount:
-        return coreCount
-
     try:
         cores = terminal(f'cat {GENERAL_DRIVER}/cpu*/topology/core_id').strip().split('\n')
     except:
         return ''
 
-    return str(len(cores))
+    return str(len(getDistinct(cores)))
 
 def getThreadCount():
     return terminal('grep processor -c /proc/cpuinfo').strip()
@@ -193,7 +189,6 @@ def getMinimumClock():
     return round(min(
         int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_min_freq').strip().split('\n')
     ) / 1000000, 2)
-
 
 def getMaximumClock():
     return round(max(
@@ -245,8 +240,11 @@ def cpuUsage():
     time.sleep(0.25)
     afterStat = terminal('grep cpu -i /proc/stat | awk \'{ $1="" ; print }\'').strip().split('\n')
 
-    beforeStat = makeListStructure(beforeStat)
-    afterStat = makeListStructure(afterStat)
+    try:
+        beforeStat = makeListStructure(beforeStat)
+        afterStat = makeListStructure(afterStat)
+    except:
+        return []
 
     usages = []
     for i in range(len(beforeStat)):
@@ -321,17 +319,21 @@ def cpuCache():
         cpuCache[cpu] = {}
 
         for cacheIndex in terminal(f'ls {baseDir}/{cpu}/cache | grep index -i').split('\n'):
-            size = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/size')
+            try:
+                size = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/size')
+            except:
+                size = 'unknown'
 
             level = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/level')
             sharing = terminal(f'cat {baseDir}/{cpu}/cache/{cacheIndex}/shared_cpu_list')
 
-            if cpuCache[cpu].get(level) is not None:
+            if cpuCache[cpu].get(level) is not None and size != 'unknown':
                 cpuCache[cpu][level]['amount'] += int(size.replace('K', '').replace('k', ''))
 
             else:
                 cpuCache[cpu][level] = {
-                    'amount' : int(size.replace('K', '').replace('k', '')),
+                    'amount' : int(size.replace('K', '').replace('k', ''))
+                        if size != 'unknown' else size,
                     'shared' : sharing
                 }
 
@@ -459,7 +461,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.2.1')
+        print('cputil: cpu util CLI v3.2.2')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
