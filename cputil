@@ -131,6 +131,18 @@ def setMaximumScalingFrequency(frequency, cpu):
 def getModelName():
     return terminal('grep "model name" -i -m 1 /proc/cpuinfo | awk -F \':\'  \'{ print $2 }\'').strip()
 
+def getByteOrder():
+    order = sys.byteorder
+
+    if order == 'little':
+        return 'Little Endian' , 'LSB'
+
+    elif order == 'big':
+        return 'Big Endian', 'MSB'
+
+    else:
+        return '', ''
+
 def getArchitecture():
     arch = platform.machine()
 
@@ -368,6 +380,7 @@ def jsonFormat():
 
     json[wrap("model name")] = wrap(getModelName())
     json[wrap('architecture')] = wrap(getArchitecture())
+    json[wrap('byte order')] = wrap(getByteOrder()[0])
 
     json[wrap('core count')] = int(getCoreCount())
     json[wrap('thread count')] = int(getThreadCount())
@@ -461,7 +474,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.2.2')
+        print('cputil: cpu util CLI v3.3.0')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -485,6 +498,10 @@ if __name__ == '__main__':
             print('Model name:\t' + model)
 
         print('Architecture:\t' + getArchitecture())
+
+        byteOrder, firstBit = getByteOrder()
+        if byteOrder:
+            print('Byte order:\t' + byteOrder + ' (first bit is ' + firstBit + ')')
 
         coreCount = getCoreCount()
         if coreCount:
