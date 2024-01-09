@@ -20,6 +20,9 @@ Options:
 -j   --json    Outputs all the available informations in json format
 ```
 
+Some systems might require root privilegies to read certain parameters. 
+If some information is missing (e.g. current frequency in usage), try running `cputil` with sudo
+
 ## Example outputs
 ```
 $ cputil -i
