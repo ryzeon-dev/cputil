@@ -268,17 +268,32 @@ def cpuFrequency():
     frequencies = terminal('grep "cpu MHZ" -i /proc/cpuinfo | awk -F \':\' \'{ print $2 }\'').strip().split('\n')
 
     if not frequencies or frequencies == ['']:
-        return None, None
+        frequencies = []
 
-    frequencies = list(
-        round(
-            float(freq.replace(',', '.')),
-            2
-        ) for freq in frequencies
-    )
+        for policy in POLICIES:
+            try:
+                freq = terminal(f'cat {DRIVER_DIR}/{policy}/cpuinfo_cur_freq')
 
-    average = round(sum(frequencies) / len(frequencies), 2)
-    return average, frequencies
+            except:
+                return None, None
+
+            else:
+                freq = round(float(freq) / 1000, 2)
+                frequencies.append(freq)
+
+        avg = round(sum(frequencies) / len(frequencies), 2)
+        return avg, frequencies
+
+    else:
+        frequencies = list(
+            round(
+                float(freq.replace(',', '.')),
+                2
+            ) for freq in frequencies
+        )
+
+        average = round(sum(frequencies) / len(frequencies), 2)
+        return average, frequencies
 
 def threadDistribution():
     driverDir = '/sys/devices/system/cpu'
@@ -474,7 +489,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.3.0')
+        print('cputil: cpu util CLI v3.3.1')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -611,7 +626,7 @@ if __name__ == '__main__':
 
                         print(f'    {label}:{indent}{percent} %')
 
-                    if frequencies:
+                    if frequencies and index < len(frequencies):
                         print(f'    Frequency: \t\t{frequencies[index]} MHz' )
 
     elif '-sg' in args or '--set-governor' in args: 
