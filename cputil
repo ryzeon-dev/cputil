@@ -369,11 +369,23 @@ def cpuCache():
 def processorsFromRange(processorRange):
     if '-' in processorRange:
         splittedRange = processorRange.split('-')
-
         start = int(splittedRange[0])
-        end = int(splittedRange[1])
 
-        return list(range(start, end + 1))
+        if ',' in splittedRange[1]:
+            end = splittedRange[1]
+            rangeEnd = int(end.split(',')[0])
+
+            additional = end.split(',')[1:]
+            linearRange = list(range(start, rangeEnd + 1))
+
+            for addition in additional:
+                linearRange.append(addition)
+            return linearRange
+
+        else:
+            end = int(splittedRange[1])
+
+            return list(range(start, end + 1))
     return list(int(element) for element in processorRange.split(','))
 
 def processorSort(processors):
@@ -489,7 +501,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.3.1')
+        print('cputil: cpu util CLI v3.3.2')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
