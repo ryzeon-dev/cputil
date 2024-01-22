@@ -501,7 +501,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.3.2')
+        print('cputil: cpu util CLI v3.4.0')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -511,6 +511,7 @@ if __name__ == '__main__':
         print('                   if omitted the action will affect all processors,')
         print('                   to be used with -sg, -sfm, -sfM, -u')
         print('    -i   --info    Show info about CPU')
+        print('    -g             Show general info only, to be used only with -i')
         print('    -u   --usage   Show CPU usage')
         print('    -avg           If specified, only average usage is shown,')
         print('                   to be used only with -u')
@@ -545,6 +546,9 @@ if __name__ == '__main__':
 
         try:    print('Maximum clock:\t' + str(getMaximumClock()) + ' GHz')
         except: pass
+
+        if '-g' in args:
+            sys.exit(0)
 
         try:
             cache = cpuCache()

@@ -3,21 +3,22 @@ CPU performance utils and information tool CLI written in Python
 
 ```
 $ cputil --help
-cputil: cpu util CLI v3.3.2
+cputil: cpu util CLI v3.4.0
 usage: cputil [OPTIONS]
 
 Options:
--sg  --set-governor          GOVERNOR     set governor (root)
--sfm --set-minimum-frequency FREQUENCY    set minimum frequency (root)
--sfM --set-maximum-frequency FREQUENCY    set maximum frequency (root)
--cpu CPU       Select which processor to affect with action,
-               if omitted the action will affect all processors,
-               to be used with -sg, -sfm, -sfM, -u
--i   --info    Show info about CPU
--u   --usage   Show CPU usage
--avg           If specified, only average usage is shown,
-               to be used only with -u
--j   --json    Outputs all the available informations in json format
+    -sg  --set-governor          GOVERNOR     set governor (root)
+    -sfm --set-minimum-frequency FREQUENCY    set minimum frequency (root)
+    -sfM --set-maximum-frequency FREQUENCY    set maximum frequency (root)
+    -cpu CPU       Select which processor to affect with action,
+                   if omitted the action will affect all processors,
+                   to be used with -sg, -sfm, -sfM, -u
+    -i   --info    Show info about CPU
+    -g             Show general info only, to be used only with -i
+    -u   --usage   Show CPU usage
+    -avg           If specified, only average usage is shown,
+                   to be used only with -u
+    -j   --json    Outputs all the available informations in json format
 ```
 
 Some systems might require root privilegies to read certain parameters. 
