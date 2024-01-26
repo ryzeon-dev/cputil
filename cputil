@@ -508,7 +508,7 @@ if __name__ == '__main__':
             print('\nAvailable scaling frequencies:')
 
             for frequency in FREQUENCIES:   
-                print('\t' + frequency)
+                print('\t' + str(frequency))
 
         print("\nCurrent status:")
         try:
