@@ -473,9 +473,9 @@ def jsonFormat():
         for label, percent in processor.items():
             json[processorId][('usage')][(label)] = float(percent)
 
-        json[processorId][('frequency')] = int(frequencies[index]) if frequencies and index < len(frequencies) else None
+        json[processorId][('frequency')] = int(frequencies[index]) if frequencies and index < len(frequencies) else ''
         json[processorId][('physical core')] = int(threadDist[index])
-        json[processorId][('physical die')] = int(dieDist[index]) if dieDist else None
+        json[processorId][('physical die')] = int(dieDist[index]) if dieDist else ''
 
         if cache is not None:
             processorCacheKey = sortedCache[index]
@@ -522,7 +522,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.4.5')
+        print('cputil: cpu util CLI v3.4.6')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
