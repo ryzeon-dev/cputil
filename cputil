@@ -405,19 +405,19 @@ def wrap(string):
 def jsonFormat():
     json = {}
 
-    json[wrap("model name")] = wrap(getModelName())
-    json[wrap('architecture')] = wrap(getArchitecture())
-    json[wrap('byte order')] = wrap(getByteOrder()[0])
+    json[("model name")] = (getModelName())
+    json[('architecture')] = (getArchitecture())
+    json[('byte order')] = (getByteOrder()[0])
 
-    json[wrap('core count')] = int(getCoreCount())
-    json[wrap('thread count')] = int(getThreadCount())
+    json[('core count')] = int(getCoreCount())
+    json[('thread count')] = int(getThreadCount())
 
-    json[wrap('clock boost')] = wrap(getClockBoost())
-    json[wrap('minimum frequency')] = int(float(getMinimumClock()) * 1000)
-    json[wrap('maximum frequency')] = int(float(getMaximumClock()) * 1000)
+    json[('clock boost')] = (getClockBoost())
+    json[('minimum frequency')] = int(float(getMinimumClock()) * 1000)
+    json[('maximum frequency')] = int(float(getMaximumClock()) * 1000)
 
-    json[wrap('governors')] = [ wrap(governor) for governor in GOVERNORS ]
-    json[wrap('scaling frequencies')] = [ int(frequency) for frequency in FREQUENCIES ]
+    json[('governors')] = [ (governor) for governor in GOVERNORS ]
+    json[('scaling frequencies')] = [ int(frequency) for frequency in FREQUENCIES ]
 
     scalingFrequencies = getCurrentScalingFrequencies()
     governors = getCurrentGovernors()
@@ -433,49 +433,49 @@ def jsonFormat():
     threadDist = threadDistribution()
     dieDist = processorDieDistribution()
 
-    json[wrap('average')] = {
-        wrap("usage") : {}
+    json[('average')] = {
+        ("usage") : {}
     }
 
     for label, percent in usages.pop(0).items():
-        json[wrap('average')][wrap('usage')][wrap(label)] = float(percent)
+        json[('average')][('usage')][(label)] = float(percent)
 
-    json[wrap('average')][wrap('frequency')] = int(averageFrequency) if averageFrequency else None
+    json[('average')][('frequency')] = int(averageFrequency) if averageFrequency else None
 
     sortedCache = processorSort(cache.keys())
 
     for index, processor in enumerate(usages):
-        processorId = wrap('processor' + str(index))
+        processorId = ('processor' + str(index))
         json[processorId]= {
-            wrap('usage') : {},
-            wrap('frequency') : '',
-            wrap('cache') : {},
-            wrap('physical core') : '',
-            wrap('physical die') : '',
-            wrap('minimum scaling frequency') : '',
-            wrap('maximum scaling frequency') : '',
-            wrap('governor') : ''
+            ('usage') : {},
+            ('frequency') : '',
+            ('cache') : {},
+            ('physical core') : '',
+            ('physical die') : '',
+            ('minimum scaling frequency') : '',
+            ('maximum scaling frequency') : '',
+            ('governor') : ''
         }
 
         try:
             scaling = scalingFrequencies[f'policy{index}']
-            json[processorId][wrap('minimum scaling frequency')] = int(scaling['min'])
-            json[processorId][wrap('maximum scaling frequency')] = int(scaling['max'])
+            json[processorId][('minimum scaling frequency')] = int(scaling['min'])
+            json[processorId][('maximum scaling frequency')] = int(scaling['max'])
         except:
             pass
 
         try:
             governor = governors[f'policy{index}']
-            json[processorId][wrap('governor')] = wrap(governor)
+            json[processorId][('governor')] = str(governor)
         except:
             pass
 
         for label, percent in processor.items():
-            json[processorId][wrap('usage')][wrap(label)] = float(percent)
+            json[processorId][('usage')][(label)] = float(percent)
 
-        json[processorId][wrap('frequency')] = int(frequencies[index]) if frequencies and index < len(frequencies) else None
-        json[processorId][wrap('physical core')] = int(threadDist[index])
-        json[processorId][wrap('physical die')] = int(dieDist[index]) if dieDist else None
+        json[processorId][('frequency')] = int(frequencies[index]) if frequencies and index < len(frequencies) else None
+        json[processorId][('physical core')] = int(threadDist[index])
+        json[processorId][('physical die')] = int(dieDist[index]) if dieDist else None
 
         if cache is not None:
             processorCacheKey = sortedCache[index]
@@ -485,9 +485,9 @@ def jsonFormat():
                 if len(sharing) == int(getThreadCount()):
                     sharing = ['all']
 
-                json[processorId][wrap('cache')][wrap('L' + str(cacheLevel))] = {
-                    wrap('sharing') : [", ".join( wrap(str(processor)) for processor in sharing )],
-                    wrap("amount") : int(level) if
+                json[processorId][('cache')][('L' + str(cacheLevel))] = {
+                    ('sharing') : [", ".join( (str(processor)) for processor in sharing )],
+                    ("amount") : int(level) if
                         isinstance((level := cache[processorCacheKey][cacheLevel]['amount']), str) and level.isdigit()
                         else level
                 }
@@ -522,7 +522,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.4.4')
+        print('cputil: cpu util CLI v3.4.5')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
