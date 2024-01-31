@@ -487,7 +487,9 @@ def jsonFormat():
 
                 json[processorId][wrap('cache')][wrap('L' + str(cacheLevel))] = {
                     wrap('sharing') : [", ".join( wrap(str(processor)) for processor in sharing )],
-                    wrap("amount") : int(level) if (level := cache[processorCacheKey][cacheLevel]['amount']).isdigit() else str(level)
+                    wrap("amount") : int(level) if
+                        isinstance((level := cache[processorCacheKey][cacheLevel]['amount']), str) and level.isdigit()
+                        else level
                 }
 
     return json
@@ -520,7 +522,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.4.2')
+        print('cputil: cpu util CLI v3.4.3')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
