@@ -522,7 +522,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.4.3')
+        print('cputil: cpu util CLI v3.4.4')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
@@ -539,7 +539,7 @@ if __name__ == '__main__':
         print('    -j   --json    Outputs all the available informations in json format')
 
     elif '-j' in args or '--json' in args:
-        print(jsonFormat().__repr__().replace("'", ''))
+        print(jsonFormat().__repr__().replace("'", '"'))
 
     elif '-i' in args or '--info' in args:
         model = getModelName()
