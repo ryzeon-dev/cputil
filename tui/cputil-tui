@@ -121,9 +121,9 @@ def getCpus():
             governor=governor,
             minScalingFrequency=minimumFrequency,
             maxScalingFrequency=maximumFrequency,
-            l1=stat['cache']['L1']['amount'],
-            l2=stat['cache']['L2']['amount'],
-            l3=stat['cache']['L3']['amount']
+            l1=level['amount'] if (level := stat['cache'].get('L1')) else '',
+            l2=level['amount'] if (level := stat['cache'].get('L2')) else '',
+            l3=level['amount'] if (level := stat['cache'].get('L3')) else ''
         )
         cpus[i] = current
 
