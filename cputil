@@ -419,6 +419,9 @@ def jsonFormat():
     json[wrap('governors')] = [ wrap(governor) for governor in GOVERNORS ]
     json[wrap('scaling frequencies')] = [ int(frequency) for frequency in FREQUENCIES ]
 
+    scalingFrequencies = getCurrentScalingFrequencies()
+    governors = getCurrentGovernors()
+
     usages = cpuUsage()
     averageFrequency, frequencies = cpuFrequency()
 
@@ -440,16 +443,32 @@ def jsonFormat():
     json[wrap('average')][wrap('frequency')] = int(averageFrequency) if averageFrequency else None
 
     sortedCache = processorSort(cache.keys())
-    for index, processor in enumerate(usages):
 
+    for index, processor in enumerate(usages):
         processorId = wrap('processor' + str(index))
         json[processorId]= {
             wrap('usage') : {},
             wrap('frequency') : '',
             wrap('cache') : {},
             wrap('physical core') : '',
-            wrap('physical die') : ''
+            wrap('physical die') : '',
+            wrap('minimum scaling frequency') : '',
+            wrap('maximum scaling frequency') : '',
+            wrap('governor') : ''
         }
+
+        try:
+            scaling = scalingFrequencies[f'policy{index}']
+            json[processorId][wrap('minimum scaling frequency')] = int(scaling['min'])
+            json[processorId][wrap('maximum scaling frequency')] = int(scaling['max'])
+        except:
+            pass
+
+        try:
+            governor = governors[f'policy{index}']
+            json[processorId][wrap('governor')] = wrap(governor)
+        except:
+            pass
 
         for label, percent in processor.items():
             json[processorId][wrap('usage')][wrap(label)] = float(percent)
@@ -501,7 +520,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.4.0')
+        print('cputil: cpu util CLI v3.4.1')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')

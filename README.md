@@ -3,7 +3,7 @@ CPU performance utils and information tool CLI written in Python
 
 ```
 $ cputil --help
-cputil: cpu util CLI v3.4.0
+cputil: cpu util CLI v3.4.1
 usage: cputil [OPTIONS]
 
 Options:
@@ -23,6 +23,9 @@ Options:
 
 Some systems might require root privilegies to read certain parameters. 
 If some information is missing (e.g. current frequency in usage), try running `cputil` with sudo
+
+The package also provides `cputil-tui`, which is a terminal-ui visualisation tool.
+In order to use it, it is required to have `cputil` properly installed.
 
 ## Example outputs
 ```

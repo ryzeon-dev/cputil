@@ -1,0 +1,334 @@
+#!/usr/bin/python3
+
+import sys
+import dataclasses
+import curses
+from _thread import start_new_thread
+import time
+import json as j
+from subprocess import getstatusoutput
+
+
+def terminal(cmd):
+    statusCode, output = getstatusoutput(cmd)
+
+    if statusCode != 0:
+        raise Exception('Non 0 return code from console')
+
+    return output
+
+try:
+    terminal('cputil')
+except:
+    print('The use of `cputil-tui` requires to have standard `cputil` properly installed and updated to latest version')
+    sys.exit(0)
+
+width = None
+height = None
+show = 'info'
+
+@dataclasses.dataclass
+class cpuCurrentUsage:
+    total: float
+    user: float
+    nice: float
+    system: float
+    idle: float
+    iowait: float
+    interrupt: float
+    soft_interrupt: float
+    frequency: int
+
+@dataclasses.dataclass
+class cpu:
+    id: int
+    core: int
+    die: int
+    governor: str
+    architecture = None
+    maxScalingFrequency: int
+    minScalingFrequency: int
+
+    currentScalingFrequency = None
+    currentGovernor = None
+    usage: cpuCurrentUsage
+
+    l1: tuple
+    l2: tuple
+    l3: tuple
+
+cpus = [None]*16
+availableGovernors = []
+availableScalingFrequencies = []
+modelName = ''
+arch = ''
+byteOrder = ''
+maxFreq = ''
+boost = ''
+
+def getCpus():
+    global cpus, availableGovernors, availableScalingFrequencies, modelName, arch, byteOrder, maxFreq, boost
+
+    json = j.loads(terminal('cputil -j'))
+    availableGovernors = ', '.join(json['governors'])
+    availableScalingFrequencies = ', '.join(str(freq) for freq in json['scaling frequencies'])
+
+    modelName = json['model name']
+    arch = json['architecture']
+
+    byteOrder = json['byte order']
+    maxFreq = json['maximum frequency']
+
+    boost = json['clock boost']
+    threads = json['thread count']
+
+    for i in range(threads):
+        name = f'processor{i}'
+        stat = json[name]
+
+        usage = cpuCurrentUsage(
+            total=stat['usage']['total'],
+            nice=stat['usage']['nice'],
+            system=stat['usage']['system'],
+            idle=stat['usage']['idle'],
+            user=stat['usage']['user'],
+            interrupt=stat['usage']['interrupt'],
+            iowait=stat['usage']['iowait'],
+            soft_interrupt=stat['usage']['soft-interrupt'],
+            frequency=stat['frequency']
+        )
+
+        try:
+            governor = stat['governor']
+        except:
+            governor = ''
+
+        try:
+            minimumFrequency = stat['minimum scaling frequency']
+        except:
+            minimumFrequency = None
+
+        try:
+            maximumFrequency = stat['maximum scaling frequency']
+        except:
+            maximumFrequency = None
+
+        current = cpu(
+            id=i,
+            usage=usage,
+            core=stat['physical core'],
+            die=stat['physical die'],
+            governor=governor,
+            minScalingFrequency=minimumFrequency,
+            maxScalingFrequency=maximumFrequency,
+            l1=stat['cache']['L1']['amount'],
+            l2=stat['cache']['L2']['amount'],
+            l3=stat['cache']['L3']['amount']
+        )
+        cpus[i] = current
+
+def retreiverThread():
+    getCpus()
+    while True:
+        if show != 'info':
+            getCpus()
+        time.sleep(2)
+
+def banner(display: curses.window):
+    text = '─┤cputil-tui├───┤commands: s[cheduler] , u[sage] , i[nfo] , q[uit]├'
+    text = '\u256d' + text.center(width - 2, '─') + '\u256e'
+    display.insstr(0, 0, text)
+
+def usageRows(cpu, relWidth):
+    if cpu is None:
+        return []
+
+    firstRow = f'\u256d┤Processor {cpu.id}├'
+    firstRow = firstRow.ljust(relWidth - 1, '─') + '\u256e'
+
+    secondRow = '│ ' + f'Total usage: {cpu.usage.total}%'.ljust(relWidth - 4) + ' │'
+
+    thirdRow = '│ │' + '█' * (round((relWidth - 6) * cpu.usage.total / 100)) + ' ' * (
+                relWidth - 6 - round((relWidth - 6) * cpu.usage.total / 100)) + '│ │'
+
+    fourthRow = '│ ' + f'User usage: {cpu.usage.user}%'.ljust(relWidth - 4) + ' │'
+
+    fifthRow = '│ │' + '█' * (round((relWidth - 6) * cpu.usage.user / 100)) + ' ' * (
+                relWidth - 6 - round((relWidth - 6) * cpu.usage.user / 100)) + '│ │'
+
+    sixthRow = '│ ' + f'System usage: {cpu.usage.system}%'.ljust(relWidth - 4) + ' │'
+
+    seventhRow = '│ │' + '█' * (round((relWidth - 6) * cpu.usage.system / 100)) + ' ' * (
+            relWidth - 6 - round((relWidth - 6) * cpu.usage.system / 100)) + '│ │'
+
+    eigthRow = '│ ' + f'Frequency: {cpu.usage.frequency} MHz'.ljust(relWidth - 4) + ' │'
+
+    finalRow = '╰' + '─' * (relWidth - 2) + '╯'
+
+    return [
+        firstRow, secondRow, thirdRow, fourthRow, fifthRow,
+        sixthRow, seventhRow, eigthRow, finalRow
+    ]
+
+def infoRows(cpu: cpu, relWidth):
+    if cpu is None:
+        return []
+    firstRow = f'\u256d┤Processor {cpu.id}├'
+    firstRow = firstRow.ljust(relWidth - 1, '─') + '\u256e'
+
+    secondRow = '│ ' + f'Core id: {cpu.core}'.ljust(relWidth - 4) + ' │'
+
+    thirdRow = '│ ' + f'Die id: {cpu.die}'.ljust(relWidth - 4) + ' │'
+
+    fourthRow = '│ ' + f'L1: {cpu.l1} kB'.ljust(relWidth - 4) + ' │'
+
+    fifthRow = '│ ' + f'L2: {cpu.l2} kB'.ljust(relWidth - 4) + ' │'
+
+    sixthRow = '│ ' + f'L3: {cpu.l3} kB'.ljust(relWidth - 4) + ' │'
+
+    finalRow = '╰' + '─' * (relWidth - 2) + '╯'
+
+    return [
+        firstRow, secondRow, thirdRow, fourthRow, fifthRow,
+        sixthRow, finalRow
+    ]
+
+def schedulerRows(cpu: cpu, relWidth):
+    if cpu is None:
+        return []
+
+    firstRow = f'\u256d┤Processor {cpu.id}├'
+    firstRow = firstRow.ljust(relWidth - 1, '─') + '\u256e'
+
+    secondRow = '│ ' + f'Current scheduler:'.ljust(relWidth - 4) + ' │'
+
+    thirdRow = '│ ' + f'{cpu.governor}'.ljust(relWidth - 4) + ' │'
+
+    fourthRow = '│ ' + f'Minimum scaling frequency:'.ljust(relWidth - 4) + ' │'
+
+    fifthRow = '│ ' + f'{cpu.minScalingFrequency} kHz'.ljust(relWidth - 4) + ' │'
+
+    sixthRow = '│ ' + f'Maximum scaling frequency:'.ljust(relWidth - 4) + ' │'
+
+    seventhRow = '│ ' + f'{cpu.maxScalingFrequency} kHz'.ljust(relWidth - 4) + ' │'
+
+    finalRow = '╰' + '─' * (relWidth - 2) + '╯'
+
+    return [
+        firstRow, secondRow, thirdRow, fourthRow, fifthRow,
+        sixthRow, seventhRow, finalRow
+    ]
+
+def renderContainer(display: curses.window, startX, startY, rows):
+    for index, row in enumerate(rows):
+        try:
+            display.addstr(startX + index, startY, row)
+
+        except: pass
+    display.refresh()
+
+def mainRender(display):
+    global width, height
+    height, width = display.getmaxyx()
+
+    banner(display)
+
+    for i in range(height - 2):
+        display.insstr(1 + i, 0, '│')
+        display.insstr(1 + i, width - 1, '│')
+    display.insstr(height-1, 0, '╰' + '─' * (width - 2) + '╯')
+
+def render(display: curses.window):
+    lastShow = show
+    while True:
+        curses.curs_set(0)
+        if lastShow != show:
+            display.clear()
+            display.refresh()
+
+            mainRender(display)
+            display.refresh()
+
+        if show == 'usage':
+            rowFnc = usageRows
+            increment = 9
+            startX = 1
+
+        elif show == 'info':
+            rowFnc = infoRows
+            increment = 7
+            startX = 6
+
+            display.addstr(1, 1, f'Model name: {modelName}')
+            display.addstr(2, 1, f'Architecture: {arch}')
+            display.addstr(3, 1, f'Byte order: {byteOrder}')
+            display.addstr(4, 1, f'Maximum frequency: {maxFreq} MHz (boost {boost})')
+
+        elif show == 'scheduler':
+            rowFnc = schedulerRows
+            increment = 8
+            startX = 4
+
+            display.addstr(1, 1, f'Available governors: {availableGovernors}')
+            display.addstr(2, 1, f'Available scaling frequencies: {availableScalingFrequencies}')
+
+        lastShow = show
+        relWidth = (width - 2) // 4
+
+        relX = startX
+        relY = 1
+
+        for index, cpu in enumerate(cpus):
+            rows = rowFnc(cpu, relWidth)
+            if rows:
+                renderContainer(display, relX, relY, rows)
+
+            if index % 4 == 3:
+                relY = 1
+                relX += increment
+
+            else:
+                relY += width // 4
+
+        time.sleep(1)
+
+def main(display: curses.window):
+    global width, height, show, mutex
+    mainRender(display)
+
+    curses.curs_set(0)
+    start_new_thread(retreiverThread, ())
+    start_new_thread(render, (display,))
+
+    while True:
+        if display.getmaxyx() != (height, width):
+            mutex.acquire()
+            display.clear()
+            mainRender(display)
+            mutex.release()
+
+        pressed = chr(display.getch())
+        if  pressed == 'u':
+            if show != 'usage':
+                show = 'usage'
+
+        elif pressed == 's':
+            if show != 'scheduler':
+                show = 'scheduler'
+
+        elif pressed == 'i':
+            if show != 'info':
+                show = 'info'
+
+        elif pressed == 'q':
+            sys.exit(0)
+
+        display.refresh()
+        time.sleep(0.1)
+
+if __name__ == '__main__':
+    try:
+        curses.wrapper(main)
+
+    except KeyboardInterrupt:
+        pass
