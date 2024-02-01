@@ -65,9 +65,11 @@ arch = ''
 byteOrder = ''
 maxFreq = ''
 boost = ''
+averageUsage = ''
+averageFrequency = ''
 
 def getCpus():
-    global cpus, availableGovernors, availableScalingFrequencies, modelName, arch, byteOrder, maxFreq, boost
+    global cpus, availableGovernors, availableScalingFrequencies, modelName, arch, byteOrder, maxFreq, boost, averageUsage, averageFrequency
 
     json = j.loads(terminal('cputil -j'))
     availableGovernors = ', '.join(json['governors'])
@@ -81,6 +83,9 @@ def getCpus():
 
     boost = json['clock boost']
     threads = json['thread count']
+
+    averageUsage = json['average']['usage']['total']
+    averageFrequency = json['average']['frequency']
 
     for i in range(threads):
         name = f'processor{i}'
@@ -252,7 +257,10 @@ def render(display: curses.window):
         if show == 'usage':
             rowFnc = usageRows
             increment = 9
-            startX = 1
+            startX = 4
+
+            display.addstr(2, 1, '├' + f'┤Average: {averageUsage}% @ {averageFrequency} MHz├'.center(width - 4, '─') + '┤')
+
 
         elif show == 'info':
             rowFnc = infoRows
@@ -293,7 +301,7 @@ def render(display: curses.window):
         time.sleep(1)
 
 def main(display: curses.window):
-    global width, height, show, mutex
+    global width, height, show
     mainRender(display)
 
     curses.curs_set(0)
@@ -302,11 +310,9 @@ def main(display: curses.window):
 
     while True:
         if display.getmaxyx() != (height, width):
-            mutex.acquire()
             display.clear()
             mainRender(display)
-            mutex.release()
-
+        
         pressed = chr(display.getch())
         if  pressed == 'u':
             if show != 'usage':
