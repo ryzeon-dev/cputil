@@ -440,7 +440,7 @@ def jsonFormat():
     for label, percent in usages.pop(0).items():
         json[('average')][('usage')][(label)] = float(percent)
 
-    json[('average')][('frequency')] = int(averageFrequency) if averageFrequency else None
+    json[('average')][('frequency')] = int(averageFrequency) if averageFrequency else ''
 
     sortedCache = processorSort(cache.keys())
 
@@ -522,7 +522,7 @@ if __name__ == '__main__':
                 print(f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu util CLI v3.4.7')
+        print('cputil: cpu util CLI v3.4.8')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     set governor (root)')
