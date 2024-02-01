@@ -261,7 +261,6 @@ def render(display: curses.window):
 
             display.addstr(2, 1, '├' + f'┤Average: {averageUsage}% @ {averageFrequency} MHz├'.center(width - 4, '─') + '┤')
 
-
         elif show == 'info':
             rowFnc = infoRows
             increment = 7
