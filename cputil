@@ -112,12 +112,13 @@ def setMaximumScalingFrequency(frequency, cpu):
         return False
 
     if cpu is True:
-
         print('Setting for all processors maximum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
+
         for policy in POLICIES:
             os.system(f'echo {frequency} > {DRIVER_DIR}/{policy}/scaling_max_freq')
 
         return True
+    
     else:
         policy = f'policy{cpu}'
 
@@ -161,7 +162,7 @@ def getArchitecture():
     busSize = platform.architecture()[0]
 
     if not busSize:
-        busSize = '64 it' if sys.maxsize == (2 ** 63 - 1) else '32bit'
+        busSize = '64 bit' if sys.maxsize == (2 ** 63 - 1) else '32 bit'
 
     return f'{arch} ({busSize})'
 
@@ -188,12 +189,16 @@ def getThreadCount():
 def getClockBoost():
     try:
         if 'boost' in os.listdir(DRIVER_DIR):
+            
             if '1' in terminal(f'cat {DRIVER_DIR}/boost'):
                 return 'active'
+            
             else:
                 return 'not active'
+        
         else:
             return 'not available'
+    
     except:
         return 'not available'
 
@@ -246,6 +251,28 @@ def getParameterUsage(beforeStat, afterStat):
         )
 
     return usage
+
+def grep(*args, filePath=None, text=None, target=None, count=False):
+    if filePath:
+        with open(filePath, 'r') as file:
+            content = file.read().split('\n')
+    
+    elif text:
+        content = text 
+    
+    else:
+        return []
+
+    if count:
+        return '\n'.join(content).count(target)
+
+    res = []
+    for line in content:
+            
+        if target in line:
+            res.append(line)
+
+    return res 
 
 def cpuUsage():
     beforeStat = terminal('grep cpu -i /proc/stat | awk \'{ $1="" ; print }\'').strip().split('\n')
@@ -301,6 +328,7 @@ def threadDistribution():
 
     for dir in os.listdir(driverDir):
         if dir.replace('cpu', '') and dir.replace('cpu', '')[0] not in string.ascii_letters:
+
             if 'topology' not in terminal(f'ls {driverDir}/{dir}') or \
                'core_id' not in terminal(f'ls {driverDir}/{dir}/topology'):
                 return []
@@ -405,19 +433,19 @@ def wrap(string):
 def jsonFormat():
     json = {}
 
-    json[("model name")] = (getModelName())
-    json[('architecture')] = (getArchitecture())
-    json[('byte order')] = (getByteOrder()[0])
+    json["model name"] = getModelName()
+    json['architecture'] = getArchitecture()
+    json['byte order'] = getByteOrder()[0]
 
-    json[('core count')] = int(getCoreCount())
-    json[('thread count')] = int(getThreadCount())
+    json['core count'] = int(getCoreCount())
+    json['thread count'] = int(getThreadCount())
 
-    json[('clock boost')] = (getClockBoost())
-    json[('minimum frequency')] = int(float(getMinimumClock()) * 1000)
-    json[('maximum frequency')] = int(float(getMaximumClock()) * 1000)
+    json['clock boost'] = getClockBoost()
+    json['minimum frequency'] = int(float(getMinimumClock()) * 1000)
+    json['maximum frequency'] = int(float(getMaximumClock()) * 1000)
 
-    json[('governors')] = [ (governor) for governor in GOVERNORS ]
-    json[('scaling frequencies')] = [ int(frequency) for frequency in FREQUENCIES ]
+    json['governors'] = [ governor for governor in GOVERNORS ]
+    json['scaling frequencies'] = [ int(frequency) for frequency in FREQUENCIES ]
 
     scalingFrequencies = getCurrentScalingFrequencies()
     governors = getCurrentGovernors()
@@ -427,55 +455,58 @@ def jsonFormat():
 
     try:
         cache = cpuCache()
+    
     except:
         cache = None
 
     threadDist = threadDistribution()
     dieDist = processorDieDistribution()
 
-    json[('average')] = {
-        ("usage") : {}
+    json['average'] = {
+        "usage" : {}
     }
 
     for label, percent in usages.pop(0).items():
-        json[('average')][('usage')][(label)] = float(percent)
+        json['average']['usage'][label] = float(percent)
 
-    json[('average')][('frequency')] = int(averageFrequency) if averageFrequency else ''
+    json['average']['frequency'] = int(averageFrequency) if averageFrequency else ''
 
     sortedCache = processorSort(cache.keys())
 
     for index, processor in enumerate(usages):
-        processorId = ('processor' + str(index))
+        processorId = 'processor' + str(index)
         json[processorId]= {
-            ('usage') : {},
-            ('frequency') : '',
-            ('cache') : {},
-            ('physical core') : '',
-            ('physical die') : '',
-            ('minimum scaling frequency') : '',
-            ('maximum scaling frequency') : '',
-            ('governor') : ''
+            'usage' : {},
+            'frequency' : '',
+            'cache' : {},
+            'physical core' : '',
+            'physical die' : '',
+            'minimum scaling frequency' : '',
+            'maximum scaling frequency' : '',
+            'governor' : ''
         }
 
         try:
             scaling = scalingFrequencies[f'policy{index}']
-            json[processorId][('minimum scaling frequency')] = int(scaling['min'])
-            json[processorId][('maximum scaling frequency')] = int(scaling['max'])
+            json[processorId]['minimum scaling frequency'] = int(scaling['min'])
+            json[processorId]['maximum scaling frequency'] = int(scaling['max'])
+        
         except:
             pass
 
         try:
             governor = governors[f'policy{index}']
-            json[processorId][('governor')] = str(governor)
+            json[processorId]['governor'] = str(governor)
+        
         except:
             pass
 
         for label, percent in processor.items():
-            json[processorId][('usage')][(label)] = float(percent)
+            json[processorId]['usage'][label] = float(percent)
 
-        json[processorId][('frequency')] = int(frequencies[index]) if frequencies and index < len(frequencies) and frequencies[index] is not None else ''
-        json[processorId][('physical core')] = int(threadDist[index])
-        json[processorId][('physical die')] = int(dieDist[index]) if dieDist else ''
+        json[processorId]['frequency'] = int(frequencies[index]) if frequencies and index < len(frequencies) and frequencies[index] is not None else ''
+        json[processorId]['physical core'] = int(threadDist[index])
+        json[processorId]['physical die'] = int(dieDist[index]) if dieDist else ''
 
         if cache is not None:
             processorCacheKey = sortedCache[index]
@@ -485,9 +516,9 @@ def jsonFormat():
                 if len(sharing) == int(getThreadCount()):
                     sharing = ['all']
 
-                json[processorId][('cache')][('L' + str(cacheLevel))] = {
-                    ('sharing') : [", ".join( (str(processor)) for processor in sharing )],
-                    ("amount") : int(level) if
+                json[processorId]['cache']['L' + str(cacheLevel)] = {
+                    'sharing' : [", ".join( (str(processor)) for processor in sharing )],
+                    "amount" : int(level) if
                         isinstance((level := cache[processorCacheKey][cacheLevel]['amount']), str) and level.isdigit()
                         else level
                 }
@@ -502,13 +533,13 @@ if __name__ == '__main__':
         print('Available governors:')
 
         for governor in GOVERNORS:
-            print('\t' + governor)
+            print(f'\t{governor}')
 
         if FREQUENCIES is not None:
             print('\nAvailable scaling frequencies:')
 
             for frequency in FREQUENCIES:   
-                print('\t' + str(frequency))
+                print(f'\t{frequency}')
 
         print("\nCurrent status:")
         try:
@@ -544,28 +575,28 @@ if __name__ == '__main__':
     elif '-i' in args or '--info' in args:
         model = getModelName()
         if model:
-            print('Model name:\t' + model)
+            print(f'Model name:\t{model}')
 
-        print('Architecture:\t' + getArchitecture())
+        print(f'Architecture:\t{getArchitecture()}')
 
         byteOrder, firstBit = getByteOrder()
         if byteOrder:
-            print('Byte order:\t' + byteOrder + ' (first bit is ' + firstBit + ')')
+            print(f'Byte order:\t{byteOrder} (first bit is {firstBit})')
 
         coreCount = getCoreCount()
         if coreCount:
-            print('Cores count:\t' + coreCount)
+            print(f'Cores count:\t{coreCount}')
 
         threadCount = getThreadCount()
         if threadCount:
-            print('Threads count:\t' + str(threadCount))
+            print(f'Threads count:\t{threadCount}')
 
         print(f'Clock boost:\t{getClockBoost()}')
 
-        try:    print('Minimum clock:\t' + str(getMinimumClock()) + ' GHz')
+        try:    print(f'Minimum clock:\t{getMinimumClock()} GHz')
         except: pass
 
-        try:    print('Maximum clock:\t' + str(getMaximumClock()) + ' GHz')
+        try:    print(f'Maximum clock:\t{getMaximumClock()} GHz')
         except: pass
 
         if '-g' in args:
