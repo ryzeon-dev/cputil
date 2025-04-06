@@ -72,6 +72,7 @@ def getCpus():
     global cpus, availableGovernors, availableScalingFrequencies, modelName, arch, byteOrder, maxFreq, boost, averageUsage, averageFrequency
 
     json = j.loads(terminal('cputil -j'))
+    cpus = [None]*json['thread count']
     availableGovernors = ', '.join(json['governors'])
     availableScalingFrequencies = ', '.join(str(freq) for freq in json['scaling frequencies'])
 
@@ -90,6 +91,7 @@ def getCpus():
     for i in range(threads):
         name = f'processor{i}'
         stat = json[name]
+
 
         usage = cpuCurrentUsage(
             total=stat['usage']['total'],
@@ -281,6 +283,7 @@ def render(display: curses.window):
 
         lastShow = show
         relWidth = (width - 2) // 4
+
 
         relX = startX
         relY = 1
