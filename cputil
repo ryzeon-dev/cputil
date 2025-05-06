@@ -7,8 +7,7 @@ import platform
 from subprocess import getstatusoutput
 import string
 
-VERSION = '3.5.1'
-
+VERSION = '3.6.0'
 
 def grep(target, pattern, returnFirstMatch=False, count=False, ignoreCase=False):
     res = []
@@ -80,17 +79,18 @@ if 'scaling_available_frequencies' in terminal('ls /sys/devices/system/cpu/cpufr
 elif 'cpuinfo_max_freq' in os.listdir('/sys/devices/system/cpu/cpufreq/policy0/') and \
         'cpuinfo_min_freq' in os.listdir('/sys/devices/system/cpu/cpufreq/policy0/'):
     FREQUENCIES = [
-        min(
+        str(min(
             int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_min_freq').strip().split('\n')
-        ),
-        max(
+        )),
+        str(max(
             int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_max_freq').strip().split('\n')
-        )
+        ))
     ]
 
 
 def setGovernor(governor, cpu):
     if governor not in GOVERNORS:
+        print(f'Error: `{governor}` is not an available governor')
         return False
 
     if cpu is True:
@@ -137,12 +137,14 @@ def getCurrentScalingFrequencies():
 
 def setMinimumScalingFrequency(frequency, cpu):
     if FREQUENCIES is None:
+        print(f'Error: cputil is unable to detect allowed scaling frequencies')
+        return False
+
+    if frequency not in FREQUENCIES:
+        print(f'Error: `{frequency}` is not one of the allowed scaling frequencies')
         return False
 
     if cpu is True:
-        if frequency not in FREQUENCIES:
-            return False
-
         print('Setting for all processors minimum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
         for policy in POLICIES:
             with open(f'{DRIVER_DIR}/{policy}/scaling_min_freq', 'w') as file:
@@ -152,8 +154,6 @@ def setMinimumScalingFrequency(frequency, cpu):
 
     else:
         policy = f'policy{cpu}'
-        if frequency not in FREQUENCIES:
-            return False
 
         if policy in POLICIES:
             print('Setting for processor ' + str(cpu) + ' minimum frequency to ' + str(
@@ -168,9 +168,11 @@ def setMinimumScalingFrequency(frequency, cpu):
 
 def setMaximumScalingFrequency(frequency, cpu):
     if FREQUENCIES is None:
+        print(f'Error: cputil is unable to detect allowed scaling frequencies')
         return False
 
     if frequency not in FREQUENCIES:
+        print(f'Error: `{frequency}` is not one of the allowed scaling frequencies')
         return False
 
     if cpu is True:
@@ -637,7 +639,7 @@ if __name__ == '__main__':
                     f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
 
     elif '-h' in args or '--help' in args:
-        print('cputil: cpu utils CLI v3.5.1')
+        print(f'cputil: cpu utils CLI v{VERSION}')
         print('usage: cputil [OPTIONS]')
         print('\nOptions:')
         print('    -sg  --set-governor          GOVERNOR     Set governor (root)')
