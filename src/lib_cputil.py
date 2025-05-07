@@ -1,13 +1,10 @@
-#!/usr/bin/python3
-import json
 import os
 import sys
 import time
 import platform
 from subprocess import getstatusoutput
 import string
-
-VERSION = '3.6.0'
+from conf import confFilePath, editConf
 
 def grep(target, pattern, returnFirstMatch=False, count=False, ignoreCase=False):
     res = []
@@ -36,7 +33,6 @@ def grep(target, pattern, returnFirstMatch=False, count=False, ignoreCase=False)
 
     return res if len(res) > 1 else (None if len(res) == 0 else res[0])
 
-
 def terminal(cmd):
     statusCode, output = getstatusoutput(cmd)
 
@@ -44,7 +40,6 @@ def terminal(cmd):
         raise Exception('Non 0 return code from console')
 
     return output
-
 
 def getPolicies():
     global DRIVER_DIR
@@ -54,12 +49,10 @@ def getPolicies():
         return [policies]
     return sorted(policies, key=lambda x: int(x.replace('policy', '')))
 
-
 def readFile(path):
     with open(path, 'r') as file:
         content = file.read()
     return content.strip()
-
 
 DRIVER_DIR = '/sys/devices/system/cpu/cpufreq'
 GOVERNORS = readFile('/sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors').strip().split(' ')
@@ -87,7 +80,6 @@ elif 'cpuinfo_max_freq' in os.listdir('/sys/devices/system/cpu/cpufreq/policy0/'
         ))
     ]
 
-
 def setGovernor(governor, cpu):
     if governor not in GOVERNORS:
         print(f'Error: `{governor}` is not an available governor')
@@ -99,6 +91,9 @@ def setGovernor(governor, cpu):
         for policy in POLICIES:
             with open(f'{DRIVER_DIR}/{policy}/scaling_governor', 'w') as file:
                 file.write(governor)
+
+        if os.path.exists(confFilePath):
+            editConf(confFilePath, governor, None, None)
 
         return True
     else:
@@ -112,14 +107,12 @@ def setGovernor(governor, cpu):
             return True
         return False
 
-
 def getCurrentGovernors():
     governors = {}
     for policy in POLICIES:
         governors[policy] = readFile(f'{DRIVER_DIR}/{policy}/scaling_governor').strip()
 
     return governors
-
 
 def getCurrentScalingFrequencies():
     frequencies = {}
@@ -134,10 +127,9 @@ def getCurrentScalingFrequencies():
 
     return frequencies
 
-
 def setMinimumScalingFrequency(frequency, cpu):
     if FREQUENCIES is None:
-        print(f'Error: cputil is unable to detect allowed scaling frequencies')
+        print(f'Error: cputil.py is unable to detect allowed scaling frequencies')
         return False
 
     if frequency not in FREQUENCIES:
@@ -149,6 +141,9 @@ def setMinimumScalingFrequency(frequency, cpu):
         for policy in POLICIES:
             with open(f'{DRIVER_DIR}/{policy}/scaling_min_freq', 'w') as file:
                 file.write(frequency)
+
+        if os.path.exists(confFilePath):
+            editConf(confFilePath, None, frequency, None)
 
         return True
 
@@ -165,10 +160,9 @@ def setMinimumScalingFrequency(frequency, cpu):
             return True
         return False
 
-
 def setMaximumScalingFrequency(frequency, cpu):
     if FREQUENCIES is None:
-        print(f'Error: cputil is unable to detect allowed scaling frequencies')
+        print(f'Error: cputil.py is unable to detect allowed scaling frequencies')
         return False
 
     if frequency not in FREQUENCIES:
@@ -182,6 +176,9 @@ def setMaximumScalingFrequency(frequency, cpu):
             with open(f'{DRIVER_DIR}/{policy}/scaling_max_freq', 'w') as file:
                 file.write(frequency)
 
+        if os.path.exists(confFilePath):
+            editConf(confFilePath, None, None, frequency)
+
         return True
 
     else:
@@ -193,9 +190,9 @@ def setMaximumScalingFrequency(frequency, cpu):
 
             with open(f'{DRIVER_DIR}/{policy}/scaling_max_freq', 'w') as file:
                 file.write(frequency)
+
             return True
         return False
-
 
 def getModelName():
     procCpuinfo = readFile('/proc/cpuinfo').split('\n')
@@ -211,7 +208,6 @@ def getModelName():
 
     return name
 
-
 def getByteOrder():
     order = sys.byteorder
 
@@ -223,7 +219,6 @@ def getByteOrder():
 
     else:
         return '', ''
-
 
 def getArchitecture():
     arch = platform.machine()
@@ -247,7 +242,6 @@ def getArchitecture():
 
     return f'{arch} ({busSize})'
 
-
 def getDistinct(list):
     distinct = []
 
@@ -257,7 +251,6 @@ def getDistinct(list):
 
     return distinct
 
-
 def getCoreCount():
     try:
         cores = terminal(f'cat {GENERAL_DRIVER}/cpu*/topology/core_id').strip().split('\n')
@@ -266,10 +259,8 @@ def getCoreCount():
 
     return str(len(getDistinct(cores)))
 
-
 def getThreadCount():
     return grep(readFile('/proc/cpuinfo'), 'processor', count=True)
-
 
 def getClockBoost():
     try:
@@ -284,18 +275,15 @@ def getClockBoost():
     except:
         return 'not available'
 
-
 def getMinimumClock():
     return round(min(
         int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_min_freq').strip().split('\n')
     ) / 1000000, 2)
 
-
 def getMaximumClock():
     return round(max(
         int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_max_freq').strip().split('\n')
     ) / 1000000, 2)
-
 
 def makeListStructure(stat):
     for index, line in enumerate(stat):
@@ -308,7 +296,6 @@ def makeListStructure(stat):
         stat[index] = list(int(element) for element in splitted)
     return stat
 
-
 usageContexts = [
     'user',
     'nice',
@@ -318,7 +305,6 @@ usageContexts = [
     'interrupt',
     'soft-interrupt'
 ]
-
 
 def getParameterUsage(beforeStat, afterStat):
     usage = {}
@@ -339,7 +325,6 @@ def getParameterUsage(beforeStat, afterStat):
 
     return usage
 
-
 def cpuUsage():
     beforeStat = terminal('grep cpu -i /proc/stat | awk \'{ $1="" ; print }\'').strip().split('\n')
     time.sleep(0.25)
@@ -356,7 +341,6 @@ def cpuUsage():
         usages.append(getParameterUsage(beforeStat[i], afterStat[i]))
 
     return usages
-
 
 def cpuFrequency():
     lines = grep(readFile('/proc/cpuinfo'), 'cpu MHz')
@@ -396,7 +380,6 @@ def cpuFrequency():
         average = round(sum(frequencies) / len(frequencies), 2)
         return average, frequencies
 
-
 def threadDistribution():
     driverDir = '/sys/devices/system/cpu'
     processors = {}
@@ -414,7 +397,6 @@ def threadDistribution():
         res.append(processors[processor])
 
     return res
-
 
 def processorDieDistribution():
     driverDir = '/sys/devices/system/cpu'
@@ -435,7 +417,6 @@ def processorDieDistribution():
         res.append(processors[processor])
 
     return res
-
 
 def cpuCache():
     baseDir = '/sys/devices/system/cpu'
@@ -473,7 +454,6 @@ def cpuCache():
 
     return cpuCache
 
-
 def processorsFromRange(processorRange):
     if '-' in processorRange:
         splittedRange = processorRange.split('-')
@@ -496,7 +476,6 @@ def processorsFromRange(processorRange):
             return list(range(start, end + 1))
     return list(int(element) for element in processorRange.split(','))
 
-
 def processorSort(processors):
     sorted = [None] * len(processors)
 
@@ -508,10 +487,8 @@ def processorSort(processors):
 
     return sorted
 
-
 def wrap(string):
     return '"' + string + '"'
-
 
 def jsonFormat():
     json = {}
@@ -608,250 +585,3 @@ def jsonFormat():
                 }
 
     return json
-
-
-if __name__ == '__main__':
-    args = sys.argv[1:]
-    cpu = True
-
-    if not args:
-        print('Available governors:')
-
-        for governor in GOVERNORS:
-            print(f'\t{governor}')
-
-        if FREQUENCIES is not None:
-            print('\nAvailable scaling frequencies:')
-
-            for frequency in FREQUENCIES:
-                print(f'\t{frequency}')
-
-        print("\nCurrent status:")
-        try:
-            freqs = getCurrentScalingFrequencies()
-
-        except:
-            pass
-
-        else:
-            for index, governor in getCurrentGovernors().items():
-                print(
-                    f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
-
-    elif '-h' in args or '--help' in args:
-        print(f'cputil: cpu utils CLI v{VERSION}')
-        print('usage: cputil [OPTIONS]')
-        print('\nOptions:')
-        print('    -sg  --set-governor          GOVERNOR     Set governor (root)')
-        print('    -sfm --set-minimum-frequency FREQUENCY    Set minimum frequency (root)')
-        print('    -sfM --set-maximum-frequency FREQUENCY    Set maximum frequency (root)')
-        print('    -cpu CPU                                  Select which processor to affect with action,')
-        print('                                              if omitted the action will affect all processors,')
-        print('                                              to be used with -sg, -sfm, -sfM, -u')
-        print('    -i   --info                               Show info about CPU')
-        print('    -g                                        Show general info only, to be used only with -i')
-        print('    -u   --usage                              Show CPU usage')
-        print('    -avg                                      If specified, only average usage is shown,')
-        print('                                              to be used only with -u')
-        print('    -j   --json                               Output all the available information in json format')
-        print('    -V   --version                            Show cputil\'s version')
-        print('    -h   --help                               Show this message and exit')
-
-    elif '-j' in args or '--json' in args:
-        print(json.dumps(jsonFormat()))
-
-    elif '-i' in args or '--info' in args:
-        model = getModelName()
-        if model:
-            print(f'Model name:\t{model}')
-
-        print(f'Architecture:\t{getArchitecture()}')
-
-        byteOrder, firstBit = getByteOrder()
-        if byteOrder:
-            print(f'Byte order:\t{byteOrder} (first bit is {firstBit})')
-
-        coreCount = getCoreCount()
-        if coreCount:
-            print(f'Cores count:\t{coreCount}')
-
-        threadCount = getThreadCount()
-        if threadCount:
-            print(f'Threads count:\t{threadCount}')
-
-        print(f'Clock boost:\t{getClockBoost()}')
-
-        try:
-            print(f'Minimum clock:\t{getMinimumClock()} GHz')
-        except:
-            pass
-
-        try:
-            print(f'Maximum clock:\t{getMaximumClock()} GHz')
-        except:
-            pass
-
-        if '-g' in args:
-            sys.exit(0)
-
-        try:
-            cache = cpuCache()
-        except:
-            sys.exit(0)
-
-        try:
-            threadDistribution = threadDistribution()
-        except:
-            threadDistribution = None
-
-        try:
-            dieDistribution = processorDieDistribution()
-        except:
-            dieDistribution = None
-
-        for index, processor in enumerate(processorSort(cache.keys())):
-            print(f'\nProcessor {index}:')
-
-            for cacheLevel in cache[processor]:
-                sharing = processorsFromRange(cache[processor][cacheLevel]["shared"])
-
-                if len(sharing) == int(threadCount):
-                    sharing = ['all']
-
-                else:
-                    try:
-                        sharing.remove(index)
-
-                    except:
-                        pass
-
-                    if not sharing:
-                        sharing = ['none']
-
-                amount = cache[processor][cacheLevel]["amount"]
-
-                print(
-                    f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
-
-            if threadDistribution is not None:
-                print(f'    Physical core: {threadDistribution[index]}')
-
-            if dieDistribution is not None:
-                print(f'    Physical die: {dieDistribution[index]}')
-
-    elif '-u' in args or '--usage' in args:
-        try:
-            usages = cpuUsage()
-            averageFrequency, frequencies = cpuFrequency()
-
-
-        except KeyboardInterrupt:
-            sys.exit(0)
-
-        if '-cpu' in args:
-            cpuIndex = args[args.index('-cpu') + 1]
-
-            usage = usages[int(cpuIndex) + 1]
-            if frequencies:
-                frequency = frequencies[int(cpuIndex)]
-
-            print(f'Processor: {cpuIndex}')
-            for label, percent in usage.items():
-                indent = '\t'
-
-                if len(label) <= 9:
-                    indent += '\t'
-
-                print(f'    {label}:{indent}{percent} %')
-
-            if frequencies:
-                print(f'    Frequency:\t\t{frequency} MHz')
-
-        else:
-            print('Average:')
-
-            for label, percent in usages[0].items():
-                indent = '\t'
-
-                if len(label) <= 9:
-                    indent += '\t'
-
-                print(f'    {label}:{indent}{percent} %')
-
-            if averageFrequency:
-                print(f'    Frequency:\t\t{averageFrequency} MHz')
-
-            if '-avg' not in args:
-                for index, thread in enumerate(usages[1:]):
-                    print(f'\nProcessor: {index}')
-
-                    for label, percent in thread.items():
-                        indent = '\t'
-
-                        if len(label) <= 9:
-                            indent += '\t'
-
-                        print(f'    {label}:{indent}{percent} %')
-
-                    if frequencies and index < len(frequencies):
-                        print(f'    Frequency: \t\t{frequencies[index]} MHz')
-
-    elif '-sg' in args or '--set-governor' in args:
-        if os.getuid():
-            print('Governor setting requires root privilegies', file=sys.stderr)
-            sys.exit(0)
-
-        try:
-            governor = args[args.index('-sg') + 1]
-        except:
-            governor = args[args.index('--set-governor') + 1]
-
-        if '-cpu' in args:
-            cpu = int(args[args.index('-cpu') + 1])
-
-        if not setGovernor(governor, cpu):
-            print('Error setting governor')
-
-    elif '-sfm' in args or '--set-min-frequency' in args:
-        if os.getuid():
-            print('Scaling frequency setting requires root privilegies', file=sys.stderr)
-            sys.exit(0)
-
-        try:
-            frequency = args[args.index('-sfm') + 1]
-        except:
-            frequency = args[args.index('--set-min-frequency') + 1]
-
-        if '-cpu' in args:
-            cpu = int(args[args.index('-cpu') + 1])
-
-        if not setMinimumScalingFrequency(frequency, cpu):
-            print('Error setting min frequency', file=sys.stderr)
-
-    elif '-sfM' in args or '--set-max-frequency' in args:
-        if os.getuid():
-            print('Scaling frequency setting requires root privilegies', file=sys.stderr)
-            sys.exit(0)
-
-        try:
-            frequency = args[args.index('-sfM') + 1]
-        except:
-            frequency = args[args.index('--set-max-frequency') + 1]
-
-        if '-cpu' in args:
-            cpu = int(args[args.index('-cpu') + 1])
-
-        if not setMaximumScalingFrequency(frequency, cpu):
-            print('Error setting max frequency', file=sys.stderr)
-
-    elif '-V' in args or '--version' in args:
-        print(f'cputil v{VERSION}')
-
-    else:
-        arg = args[0]
-
-        if arg[0] == '-':
-            print(f'Error: unrecognised option "{arg}"')
-
-        else:
-            print(f'Error: unrecognised argument "{arg}"')

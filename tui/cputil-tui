@@ -18,9 +18,9 @@ def terminal(cmd):
     return output
 
 try:
-    terminal('cputil')
+    terminal('cputil.py')
 except:
-    print('The use of `cputil-tui` requires to have standard `cputil` properly installed and updated to latest version')
+    print('The use of `cputil.py-tui` requires to have standard `cputil.py` properly installed and updated to latest version')
     sys.exit(0)
 
 width = None
@@ -71,7 +71,7 @@ averageFrequency = ''
 def getCpus():
     global cpus, availableGovernors, availableScalingFrequencies, modelName, arch, byteOrder, maxFreq, boost, averageUsage, averageFrequency
 
-    json = j.loads(terminal('cputil -j'))
+    json = j.loads(terminal('cputil.py -j'))
     cpus = [None]*json['thread count']
     availableGovernors = ', '.join(json['governors'])
     availableScalingFrequencies = ', '.join(str(freq) for freq in json['scaling frequencies'])
@@ -142,7 +142,7 @@ def retreiverThread():
         time.sleep(2)
 
 def banner(display: curses.window):
-    text = '─┤cputil-tui├───┤commands: s[cheduler] , u[sage] , i[nfo] , q[uit]├'
+    text = '─┤cputil.py-tui├───┤commands: s[cheduler] , u[sage] , i[nfo] , q[uit]├'
     text = '\u256d' + text.center(width - 2, '─') + '\u256e'
     display.insstr(0, 0, text)
 

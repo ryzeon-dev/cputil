@@ -1,35 +1,117 @@
 # cputil
-CPU performance utils and information tool CLI written in Python
+CPU performance utils and information tool CLI & daemon written in Python
 
-```
-$ cputil --help
-cputil: cpu utils CLI v3.5.2
-usage: cputil [OPTIONS]
+# Install
+- compilation requires `python3`, `python3-venv` and `python3-pip` to be installed
+- use the `install.sh` script, executing it as root
+  - run `sudo bash install.sh bin` to only install the utility program
+  - run `sudo bash install.sh daemon` to only install the daemon
+  - run `sudo bash install.sh all` to install both
+- both options require the compilation of the source files (which is done automatically by the installation script) 
 
-Options:
-    -sg  --set-governor          GOVERNOR     Set governor (root)
-    -sfm --set-minimum-frequency FREQUENCY    Set minimum frequency (root)
-    -sfM --set-maximum-frequency FREQUENCY    Set maximum frequency (root)
-    -cpu CPU                                  Select which processor to affect with action,
-                                              if omitted the action will affect all processors,
-                                              to be used with -sg, -sfm, -sfM, -u
-    -i   --info                               Show info about CPU
-    -g                                        Show general info only, to be used only with -i
-    -u   --usage                              Show CPU usage
-    -avg                                      If specified, only average usage is shown,
-                                              to be used only with -u
-    -j   --json                               Output all the available information in json format
-    -V   --version                            Show cputil's version
-    -h   --help                               Show this message and exit
-```
+# Uninstall
+- to uninstall the system run `sudo bash install.sh uninstall`
 
-Some systems might require root privilegies to read certain parameters. 
-If some information is missing (e.g. current frequency in usage), try running `cputil` with sudo
+# Usage
+## Utility
+- `cputil` allows to monitor cpu's usage, inspect its properties and set its governor and scaling frequencies
 
-The package also provides `cputil-tui`, which is a terminal-ui visualisation tool.
-In order to use it, it is required to have `cputil` properly installed.
+### Setting
+- setting requires root privilegies
+- to set the governor, use the `-sg` or `--set-governor` flag followed by the selected governor
+  - run `cputil` with no argument to view the available governors
+- to set minimum scaling frequency, use the `-sfm` or `--set-minimum-frequency` flag
+  - run `cputil` with no argument to view the available scaling frequencies
+- to set minimum scaling frequency, use the `-sfM` or `--set-maximum-frequency` flag
+  - run `cputil` with no argument to view the available scaling frequencies
+- if the flag `-cpu` is added, followed by a logical processor's number, any actions will only affect the specified processor
+- when setting any parameter for the entire CPU, if `cputild` daemon is installed, the configuration file will be overwritten with the new parameters 
+
+### Inspecting 
+- the inspection of CPU properties is done using the `-i` or `--info` flag
+- it will show information like:
+  - model name
+  - architecture
+  - byte order
+  - cores count
+  - threads count
+  - clock parameters
+  - logical processors' core distribution, die distribution and cache sharing  
+  - if the `-g` flag is added, logical processor wise information is omitted
+
+### Usage
+- cpu usage is monitored using `-u` or `--usage` flag
+  - both average and logical processor wise usage is shown
+  - if the `-avg` flag is used, only average usage will be shown
+
+### Json
+- the `-j` or `--json` flags prints all the available information in json format
+
+### Version
+- using `-V` or `--version` flag prints the current cputil's version
+
+### Help
+- use `-h` or `--help` to get help
+
+## Daemon
+- useful to set CPU parameters as default
+- in the installation process, it is configured as service, and started
+- once installed (refer to the Install section), the daemon will loop, executing its procedure every 60 seconds
+  - it reads the configuration file, located at /etc/cputild/cputild.conf
+  - parses the configuration, and applies it 
+  - if any parameter is set to `auto`, it will not be modified
 
 ## Example outputs
+
+```
+$ cputil
+Available governors:
+        ondemand
+        userspace
+        powersave
+        conservative
+        performance
+        schedutil
+
+Available scaling frequencies:
+        4300000
+        3000000
+
+Current status:
+Processor 0:    "performance" governor  frequency max = 4300000, min = 3000000
+Processor 1:    "performance" governor  frequency max = 4300000, min = 3000000
+Processor 2:    "performance" governor  frequency max = 4300000, min = 3000000
+Processor 3:    "performance" governor  frequency max = 4300000, min = 3000000
+Processor 4:    "performance" governor  frequency max = 4300000, min = 3000000
+Processor 5:    "performance" governor  frequency max = 4300000, min = 3000000
+Processor 6:    "performance" governor  frequency max = 4300000, min = 3000000
+Processor 7:    "performance" governor  frequency max = 4300000, min = 3000000
+Processor 8:    "performance" governor  frequency max = 4300000, min = 3000000
+Processor 9:    "performance" governor  frequency max = 4300000, min = 3000000
+Processor 10:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 11:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 12:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 13:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 14:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 15:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 16:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 17:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 18:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 19:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 20:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 21:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 22:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 23:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 24:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 25:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 26:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 27:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 28:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 29:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 30:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 31:   "performance" governor  frequency max = 4300000, min = 3000000
+```
+
 ```
 $ cputil -i
 Model name:     AMD Ryzen 9 9950X 16-Core Processor

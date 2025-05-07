@@ -1,0 +1,8 @@
+[Unit]
+Description = cputil daemon 
+
+[Service]
+ExecStart=/etc/cputild/bin/cputild 
+
+[Install]
+WantedBy=default.target
