@@ -7,6 +7,7 @@ def parseConf(path):
     governor = None
     scalingMinFreq = None
     scalingMaxFreq = None
+    pollingInterval = None
 
     for line in content.split('\n'):
         if line.startswith('#'):
@@ -21,7 +22,13 @@ def parseConf(path):
         elif (prompt := 'max_scaling_frequency:') in line:
             scalingMaxFreq = line.replace(prompt, '').strip()
 
-    return governor, scalingMinFreq, scalingMaxFreq
+        elif (prompt := 'polling_interval:') in line:
+            try:
+                pollingInterval = line.replace(prompt, '').strip()
+            except:
+                pass
+
+    return governor, scalingMinFreq, scalingMaxFreq, pollingInterval
 
 def editConf(path, governor, scalingMinFreq, scalingMaxFreq):
     with open(path, 'r') as file:

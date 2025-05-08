@@ -51,13 +51,6 @@ elif [ "$1" == "all" ]; then
     installBin
     removeInstallFiles
 
-elif [ "$1" == "uninstall" ]; then 
-  systemctl stop cputild 
-  systemctl disable cputild 
-
-  rm -rf /etc/cputild 
-  rm -rf /usr/local/bin/cputil
-
 else
-    echo "usage: install.sh (daemon | bin | all | uninstall)"
+    echo "usage: install.sh (daemon | bin | all)"
 fi

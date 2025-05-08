@@ -10,7 +10,10 @@ CPU performance utils and information tool CLI & daemon written in Python
 - both options require the compilation of the source files (which is done automatically by the installation script) 
 
 # Uninstall
-- to uninstall the system run `sudo bash install.sh uninstall`
+- to uninstall use `uninstall.sh` script with root privilegies
+  - run `sudo bash uninstall.sh bin` to uninstall binary executable
+  - run `sudo bash uninstall.sh daemon` to uninstall the daemon
+  - run `sudo bash uninstall.sh all` to uninstall both
 
 # Usage
 ## Utility
@@ -59,7 +62,13 @@ CPU performance utils and information tool CLI & daemon written in Python
 - once installed (refer to the Install section), the daemon will loop, executing its procedure every 60 seconds
   - it reads the configuration file, located at /etc/cputild/cputild.conf
   - parses the configuration, and applies it 
-  - if any parameter is set to `auto`, it will not be modified
+- the value assigned to configuration parameters must be allowed, check the available values in your system running `cputil` 
+- if any parameter is set to `auto`, it will not be modified
+- configuration parameters are:
+  - governor
+  - min_scaling_frequency
+  - max_scaling_frequency
+  - polling_interval (default value is 10 seconds)
 
 ## Example outputs
 
