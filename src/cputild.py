@@ -18,4 +18,4 @@ while True:
     if maxScalingFreq is not None and maxScalingFreq != 'auto':
         setMaximumScalingFrequency(maxScalingFreq, True)
 
-    time.sleep(pollingInterval if pollingInterval is not None else 10)
+    time.sleep(int(pollingInterval) if pollingInterval is not None else 10)
