@@ -1,6 +1,7 @@
 from lib_cputil import *
+import json
 
-VERSION = '4.0.0'
+VERSION = '4.1.0'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -37,6 +38,8 @@ if __name__ == '__main__':
         print('    -sg  --set-governor          GOVERNOR     Set governor (root)')
         print('    -sfm --set-minimum-frequency FREQUENCY    Set minimum frequency (root)')
         print('    -sfM --set-maximum-frequency FREQUENCY    Set maximum frequency (root)')
+        print('    --maximum-performance                     Set "performace" governor and set both minimum')
+        print('                                              and maximum scaling frequency to the max allowed value (root)')
         print('    -cpu CPU                                  Select which processor to affect with action,')
         print('                                              if omitted the action will affect all processors,')
         print('                                              to be used with -sg, -sfm, -sfM, -u')
@@ -235,6 +238,18 @@ if __name__ == '__main__':
 
         if not setMaximumScalingFrequency(frequency, cpu):
             print('Error setting max frequency', file=sys.stderr)
+
+    elif '--maximum-performance' in args:
+        if os.getuid():
+            print('Setting cpu to max performance requires root privilegies', file=sys.stderr)
+            sys.exit(0)
+
+        try:
+            maxAll()
+
+        except Exception as e:
+            print(f'Error setting cpu to max performance because of: {e}')
+            sys.exit(1)
 
     elif '-V' in args or '--version' in args:
         print(f'cputil v{VERSION}')

@@ -5,6 +5,7 @@ import platform
 from subprocess import getstatusoutput
 import string
 from conf import confFilePath, editConf
+import re
 
 def grep(target, pattern, returnFirstMatch=False, count=False, ignoreCase=False):
     res = []
@@ -55,30 +56,56 @@ def readFile(path):
     return content.strip()
 
 DRIVER_DIR = '/sys/devices/system/cpu/cpufreq'
-GOVERNORS = readFile('/sys/devices/system/cpu/cpufreq/policy0/scaling_available_governors').strip().split(' ')
+GOVERNORS = []
 
 POLICIES = getPolicies()
 
 GENERAL_DRIVER = '/sys/devices/system/cpu/'
-FREQUENCIES = None
+FREQUENCIES = []
 
-if 'scaling_available_frequencies' in terminal('ls /sys/devices/system/cpu/cpufreq/policy*/'):
-    FREQUENCIES = max((
-        scalingFreqs for scalingFreqs in
-        terminal('cat /sys/devices/system/cpu/cpufreq/policy*/scaling_available_frequencies').strip().split('\n')),
-        key=len
-    ).strip().split(' ')
+def readScalingFrequencies():
+    frequencies = set()
+    frequencyFiles = ['scaling_max_freq', 'scaling_min_freq', 'amd_pstate_lowest_nonlinear_freq', 'amd_pstate_max_freq', 'cpuinfo_max_freq', 'cpuinfo_min_freq']
 
-elif 'cpuinfo_max_freq' in os.listdir('/sys/devices/system/cpu/cpufreq/policy0/') and \
-        'cpuinfo_min_freq' in os.listdir('/sys/devices/system/cpu/cpufreq/policy0/'):
-    FREQUENCIES = [
-        str(min(
-            int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_min_freq').strip().split('\n')
-        )),
-        str(max(
-            int(freq) for freq in terminal(f'cat {DRIVER_DIR}/policy*/cpuinfo_max_freq').strip().split('\n')
-        ))
-    ]
+    for e in os.listdir(DRIVER_DIR):
+        if not re.fullmatch('^policy[0-9]{1,3}$', e):
+            continue
+
+        policyPath = os.path.join(DRIVER_DIR, e)
+
+        for file in frequencyFiles:
+            filePath = os.path.join(policyPath, file)
+            if not os.path.exists(filePath):
+                continue
+
+            with open(filePath, 'r') as file:
+                frequencies.add(file.read().strip())
+
+    frequencies = list(frequencies)
+    frequencies.sort(key= lambda x: int(x))
+    return frequencies
+
+def findAvailableGovernors():
+    governors = set()
+    governorFiles = ['scaling_available_governors']
+    for e in os.listdir(DRIVER_DIR):
+        if not re.fullmatch('^policy[0-9]{1,3}$', e):
+            continue
+
+        policyPath = os.path.join(DRIVER_DIR, e)
+
+        for file in governorFiles:
+            filePath = os.path.join(policyPath, file)
+            if not os.path.exists(filePath):
+                continue
+
+            with open(filePath, 'r') as file:
+                governors.add(file.read().strip())
+
+    return governors
+
+FREQUENCIES = readScalingFrequencies()
+GOVERNORS = findAvailableGovernors()
 
 def setGovernor(governor, cpu):
     if governor not in GOVERNORS:
@@ -129,7 +156,7 @@ def getCurrentScalingFrequencies():
 
 def setMinimumScalingFrequency(frequency, cpu):
     if FREQUENCIES is None:
-        print(f'Error: cputil.py is unable to detect allowed scaling frequencies')
+        print(f'Error: cputil is unable to detect allowed scaling frequencies')
         return False
 
     if frequency not in FREQUENCIES:
@@ -193,6 +220,12 @@ def setMaximumScalingFrequency(frequency, cpu):
 
             return True
         return False
+
+def maxAll():
+    maxScalingFrequency = str(max(int(freq) for freq in FREQUENCIES))
+    setGovernor('performance', True)
+    setMinimumScalingFrequency(maxScalingFrequency, True)
+    setMaximumScalingFrequency(maxScalingFrequency, True)
 
 def getModelName():
     procCpuinfo = readFile('/proc/cpuinfo').split('\n')

@@ -30,6 +30,8 @@ CPU performance utils and information tool CLI & daemon written in Python
 - if the flag `-cpu` is added, followed by a logical processor's number, any actions will only affect the specified processor
 - when setting any parameter for the entire CPU, if `cputild` daemon is installed, the configuration file will be overwritten with the new parameters 
 
+- to set the processor to its absolute max performace, run cputil with `--maximum-performace` flag, which sets governor to "performace" and sets both minimum and maximum scaling frequency to the max allowed value
+
 ### Inspecting 
 - the inspection of CPU properties is done using the `-i` or `--info` flag
 - it will show information like:
