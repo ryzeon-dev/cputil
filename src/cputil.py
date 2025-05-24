@@ -1,7 +1,7 @@
 from lib_cputil import *
 import json
 
-VERSION = '4.1.0'
+VERSION = '4.1.1'
 
 if __name__ == '__main__':
     args = sys.argv[1:]

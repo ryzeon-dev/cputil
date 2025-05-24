@@ -100,9 +100,10 @@ def findAvailableGovernors():
                 continue
 
             with open(filePath, 'r') as file:
-                governors.add(file.read().strip())
+                for governor in file.read().strip().split(' '):
+                    governors.add(governor)
 
-    return governors
+    return list(governors)
 
 FREQUENCIES = readScalingFrequencies()
 GOVERNORS = findAvailableGovernors()
