@@ -80,62 +80,68 @@ CPU performance utils and information tool CLI & daemon written in Python
 ```
 $ cputil
 Available governors:
-        ondemand
-        userspace
         powersave
-        conservative
         performance
-        schedutil
 
 Available scaling frequencies:
-        4300000
-        3000000
+        600000
+        2981000
+        5752000
+
+Energy performance preferences:
+        performance
+        power
+        default
+        balance_power
+        balance_performance
 
 Current status:
-Processor 0:    "performance" governor  frequency max = 4300000, min = 3000000
-Processor 1:    "performance" governor  frequency max = 4300000, min = 3000000
-Processor 2:    "performance" governor  frequency max = 4300000, min = 3000000
-Processor 3:    "performance" governor  frequency max = 4300000, min = 3000000
-Processor 4:    "performance" governor  frequency max = 4300000, min = 3000000
-Processor 5:    "performance" governor  frequency max = 4300000, min = 3000000
-Processor 6:    "performance" governor  frequency max = 4300000, min = 3000000
-Processor 7:    "performance" governor  frequency max = 4300000, min = 3000000
-Processor 8:    "performance" governor  frequency max = 4300000, min = 3000000
-Processor 9:    "performance" governor  frequency max = 4300000, min = 3000000
-Processor 10:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 11:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 12:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 13:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 14:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 15:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 16:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 17:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 18:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 19:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 20:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 21:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 22:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 23:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 24:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 25:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 26:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 27:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 28:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 29:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 30:   "performance" governor  frequency max = 4300000, min = 3000000
-Processor 31:   "performance" governor  frequency max = 4300000, min = 3000000
+Processor 0:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 1:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 2:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 3:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 4:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 5:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 6:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 7:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 8:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 9:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 10:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 11:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 12:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 13:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 14:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 15:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 16:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 17:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 18:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 19:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 20:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 21:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 22:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 23:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 24:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 25:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 26:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 27:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 28:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 29:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 30:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 31:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
 ```
 
 ```
 $ cputil -i
-Model name:     AMD Ryzen 9 9950X 16-Core Processor
-Architecture:   amd64 / x86_64 (64bit)
-Byte order:     Little Endian (first bit is LSB)
-Cores count:    16
-Threads count:  32
-Clock boost:    active
-Minimum clock:  3.0 GHz
-Maximum clock:  4.3 GHz
+Model name:             AMD Ryzen 9 9950X 16-Core Processor
+Architecture:           amd64 / x86_64 (64bit)
+Byte order:             Little Endian (first bit is LSB)
+Cores count:            16
+Threads count:          32
+Clock boost:            active
+Minimum clock:          0.6 GHz
+Maximum clock:          5.75 GHz
+AMD P-State status:     active
+AMD P-State prefcore:   enabled
 
 Processor 0:
     L2 cache: 1024 KB   shared with processor(s): 16
@@ -198,56 +204,56 @@ Processor 8:
     L1 cache: 80 KB     shared with processor(s): 24
     L3 cache: 32768 KB  shared with processor(s): 9, 10, 11, 12, 13, 14, 15, 24
     Physical core: 8
-    Physical die: 0
+    Physical die: 1
 
 Processor 9:
     L2 cache: 1024 KB   shared with processor(s): 25
     L1 cache: 80 KB     shared with processor(s): 25
     L3 cache: 32768 KB  shared with processor(s): 8, 10, 11, 12, 13, 14, 15, 24
     Physical core: 9
-    Physical die: 0
+    Physical die: 1
 
 Processor 10:
     L2 cache: 1024 KB   shared with processor(s): 26
     L1 cache: 80 KB     shared with processor(s): 26
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 11, 12, 13, 14, 15, 24
     Physical core: 10
-    Physical die: 0
+    Physical die: 1
 
 Processor 11:
     L2 cache: 1024 KB   shared with processor(s): 27
     L1 cache: 80 KB     shared with processor(s): 27
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 12, 13, 14, 15, 24
     Physical core: 11
-    Physical die: 0
+    Physical die: 1
 
 Processor 12:
     L2 cache: 1024 KB   shared with processor(s): 28
     L1 cache: 80 KB     shared with processor(s): 28
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 13, 14, 15, 24
     Physical core: 12
-    Physical die: 0
+    Physical die: 1
 
 Processor 13:
     L2 cache: 1024 KB   shared with processor(s): 29
     L1 cache: 80 KB     shared with processor(s): 29
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 14, 15, 24
     Physical core: 13
-    Physical die: 0
+    Physical die: 1
 
 Processor 14:
     L2 cache: 1024 KB   shared with processor(s): 30
     L1 cache: 80 KB     shared with processor(s): 30
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 13, 15, 24
     Physical core: 14
-    Physical die: 0
+    Physical die: 1
 
 Processor 15:
     L2 cache: 1024 KB   shared with processor(s): 31
     L1 cache: 80 KB     shared with processor(s): 31
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 24
     Physical core: 15
-    Physical die: 0
+    Physical die: 1
 
 Processor 16:
     L2 cache: 1024 KB   shared with processor(s): 0
@@ -310,57 +316,56 @@ Processor 24:
     L1 cache: 80 KB     shared with processor(s): 8
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
     Physical core: 8
-    Physical die: 0
+    Physical die: 1
 
 Processor 25:
     L2 cache: 1024 KB   shared with processor(s): 9
     L1 cache: 80 KB     shared with processor(s): 9
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
     Physical core: 9
-    Physical die: 0
+    Physical die: 1
 
 Processor 26:
     L2 cache: 1024 KB   shared with processor(s): 10
     L1 cache: 80 KB     shared with processor(s): 10
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
     Physical core: 10
-    Physical die: 0
+    Physical die: 1
 
 Processor 27:
     L2 cache: 1024 KB   shared with processor(s): 11
     L1 cache: 80 KB     shared with processor(s): 11
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
     Physical core: 11
-    Physical die: 0
+    Physical die: 1
 
 Processor 28:
     L2 cache: 1024 KB   shared with processor(s): 12
     L1 cache: 80 KB     shared with processor(s): 12
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
     Physical core: 12
-    Physical die: 0
+    Physical die: 1
 
 Processor 29:
     L2 cache: 1024 KB   shared with processor(s): 13
     L1 cache: 80 KB     shared with processor(s): 13
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
     Physical core: 13
-    Physical die: 0
+    Physical die: 1
 
 Processor 30:
     L2 cache: 1024 KB   shared with processor(s): 14
     L1 cache: 80 KB     shared with processor(s): 14
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
     Physical core: 14
-    Physical die: 0
+    Physical die: 1
 
 Processor 31:
     L2 cache: 1024 KB   shared with processor(s): 15
     L1 cache: 80 KB     shared with processor(s): 15
     L3 cache: 32768 KB  shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
     Physical core: 15
-    Physical die: 0
-
+    Physical die: 1
 ```
 
 ```

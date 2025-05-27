@@ -592,10 +592,10 @@ def processorDieDistribution():
         if dir.replace('cpu', '') and dir.replace('cpu', '')[0] not in string.ascii_letters:
 
             if 'topology' not in os.listdir(os.path.join(GENERAL_DRIVER, dir)) or \
-                    'die_id' not in os.listdir(os.paht.join(GENERAL_DRIVER, dir, 'topology')):
+                    'die_id' not in os.listdir(os.path.join(GENERAL_DRIVER, dir, 'topology')):
                 return None
 
-            with open(os.paht.join(GENERAL_DRIVER, dir, 'topology', 'die_id'), 'r') as file:
+            with open(os.path.join(GENERAL_DRIVER, dir, 'topology', 'die_id'), 'r') as file:
                 processors[dir] = file.read().strip()
 
     res = []
