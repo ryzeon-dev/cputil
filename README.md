@@ -30,7 +30,8 @@ CPU performance utils and information tool CLI & daemon written in Python
 - if the flag `-cpu` is added, followed by a logical processor's number, any actions will only affect the specified processor
 - when setting any parameter for the entire CPU, if `cputild` daemon is installed, the configuration file will be overwritten with the new parameters 
 
-- to set the processor to its absolute max performace, run cputil with `--maximum-performace` flag, which sets governor to "performace" and sets both minimum and maximum scaling frequency to the max allowed value
+- to set the processor to its absolute max performace, run cputil with `-max` or `--maximum-performace` flag, which sets governor to "performace", sets both minimum and maximum scaling frequency to the max allowed value and sets energy performance preference to "performance"
+- to set the processor to its absolute min performace, run cputil with `-min` or `--minimum-performace` flag, which sets governor to the weakest available, sets both minimum and maximum scaling frequency to the min allowed value and sets energy performance preference to "power"
 
 ### Inspecting 
 - the inspection of CPU properties is done using the `-i` or `--info` flag
@@ -43,6 +44,8 @@ CPU performance utils and information tool CLI & daemon written in Python
   - clock parameters
   - logical processors' core distribution, die distribution and cache sharing  
   - if the `-g` flag is added, logical processor wise information is omitted
+
+- the inspection of CPU performance level is done using `cputil` without any flag
 
 ### Usage
 - cpu usage is monitored using `-u` or `--usage` flag

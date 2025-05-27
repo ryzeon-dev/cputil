@@ -1,7 +1,7 @@
 from lib_cputil import *
 import json
 
-VERSION = '4.1.1'
+VERSION = '4.2.0'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -19,17 +19,37 @@ if __name__ == '__main__':
             for frequency in FREQUENCIES:
                 print(f'\t{frequency}')
 
+        if ENERGY_PERFORMANCE_PREFERENCES:
+            print('\nEnergy performance preferences:')
+
+            for preference in ENERGY_PERFORMANCE_PREFERENCES:
+                print(f'\t{preference}')
+
         print("\nCurrent status:")
+
         try:
             freqs = getCurrentScalingFrequencies()
 
         except:
-            pass
+            freqs = {}
 
-        else:
-            for index, governor in getCurrentGovernors().items():
-                print(
-                    f'Processor {index.replace("policy", "")}: \t"{governor}" governor\tfrequency max = {freqs[index]["max"]}, min = {freqs[index]["min"]}')
+
+        try:
+            energyPerformance = getCurrentEnergyPerformancePreferences()
+
+        except:
+            energyPerformance = {}
+
+        for policy, governor in getCurrentGovernors().items():
+            line = f'Processor {policy.replace("policy", "")}:\t{governor} governor'
+
+            if (policyFreqs := freqs.get(policy)) is not None:
+                line += f'    frequency max = {policyFreqs["max"]}, min = {policyFreqs["min"]}'
+
+            if (energyPreference := energyPerformance.get(policy)) is not None:
+                line += f'    energy preference = {energyPreference}'
+            
+            print(line)
 
     elif '-h' in args or '--help' in args:
         print(f'cputil: cpu utils CLI v{VERSION}')
@@ -38,11 +58,16 @@ if __name__ == '__main__':
         print('    -sg  --set-governor          GOVERNOR     Set governor (root)')
         print('    -sfm --set-minimum-frequency FREQUENCY    Set minimum frequency (root)')
         print('    -sfM --set-maximum-frequency FREQUENCY    Set maximum frequency (root)')
-        print('    --maximum-performance                     Set "performace" governor and set both minimum')
-        print('                                              and maximum scaling frequency to the max allowed value (root)')
+        print('    -sep --set-energy-preference PREFERENCE   Set energy performance preference (root)')
+        print('    -max --maximum-performance                Set "performace" governor, set both minimum and')
+        print('                                              maximum scaling frequency to the max allowed value')
+        print('                                              and set energy performance preference to "performance" (root)')
+        print('    -min --minimum-performance                Set weakest governor, set both minimum and')
+        print('                                              maximum scaling frequency to the min allowed value')
+        print('                                              and set energy performance preference to "power" (root)')
         print('    -cpu CPU                                  Select which processor to affect with action,')
         print('                                              if omitted the action will affect all processors,')
-        print('                                              to be used with -sg, -sfm, -sfM, -u')
+        print('                                              to be used with -sg, -sfm, -sfM, -sep, -u')
         print('    -i   --info                               Show info about CPU')
         print('    -g                                        Show general info only, to be used only with -i')
         print('    -u   --usage                              Show CPU usage')
@@ -58,33 +83,41 @@ if __name__ == '__main__':
     elif '-i' in args or '--info' in args:
         model = getModelName()
         if model:
-            print(f'Model name:\t{model}')
+            print(f'Model name:\t\t{model}')
 
-        print(f'Architecture:\t{getArchitecture()}')
+        print(f'Architecture:\t\t{getArchitecture()}')
 
         byteOrder, firstBit = getByteOrder()
         if byteOrder:
-            print(f'Byte order:\t{byteOrder} (first bit is {firstBit})')
+            print(f'Byte order:\t\t{byteOrder} (first bit is {firstBit})')
 
         coreCount = getCoreCount()
         if coreCount:
-            print(f'Cores count:\t{coreCount}')
+            print(f'Cores count:\t\t{coreCount}')
 
         threadCount = getThreadCount()
         if threadCount:
-            print(f'Threads count:\t{threadCount}')
+            print(f'Threads count:\t\t{threadCount}')
 
-        print(f'Clock boost:\t{getClockBoost()}')
+        print(f'Clock boost:\t\t{getClockBoost()}')
 
         try:
-            print(f'Minimum clock:\t{getMinimumClock()} GHz')
+            print(f'Minimum clock:\t\t{getMinimumClock()} GHz')
         except:
             pass
 
         try:
-            print(f'Maximum clock:\t{getMaximumClock()} GHz')
+            print(f'Maximum clock:\t\t{getMaximumClock()} GHz')
         except:
             pass
+
+        amdPStateStatus, amdPStatePrefcore = getAmdPState()
+
+        if amdPStateStatus is not None:
+            print(f'AMD P-State status:\t{amdPStateStatus}')
+
+        if amdPStatePrefcore is not None:
+            print(f'AMD P-State prefcore:\t{amdPStatePrefcore}')
 
         if '-g' in args:
             sys.exit(0)
@@ -104,8 +137,8 @@ if __name__ == '__main__':
         except:
             dieDistribution = None
 
-        for index, processor in enumerate(processorSort(cache.keys())):
-            print(f'\nProcessor {index}:')
+        for policy, processor in enumerate(processorSort(cache.keys())):
+            print(f'\nProcessor {policy}:')
 
             for cacheLevel in cache[processor]:
                 sharing = processorsFromRange(cache[processor][cacheLevel]["shared"])
@@ -115,7 +148,7 @@ if __name__ == '__main__':
 
                 else:
                     try:
-                        sharing.remove(index)
+                        sharing.remove(policy)
 
                     except:
                         pass
@@ -129,10 +162,10 @@ if __name__ == '__main__':
                     f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
 
             if threadDistribution is not None:
-                print(f'    Physical core: {threadDistribution[index]}')
+                print(f'    Physical core: {threadDistribution[policy]}')
 
             if dieDistribution is not None:
-                print(f'    Physical die: {dieDistribution[index]}')
+                print(f'    Physical die: {dieDistribution[policy]}')
 
     elif '-u' in args or '--usage' in args:
         try:
@@ -177,8 +210,8 @@ if __name__ == '__main__':
                 print(f'    Frequency:\t\t{averageFrequency} MHz')
 
             if '-avg' not in args:
-                for index, thread in enumerate(usages[1:]):
-                    print(f'\nProcessor: {index}')
+                for policy, thread in enumerate(usages[1:]):
+                    print(f'\nProcessor: {policy}')
 
                     for label, percent in thread.items():
                         indent = '\t'
@@ -188,8 +221,8 @@ if __name__ == '__main__':
 
                         print(f'    {label}:{indent}{percent} %')
 
-                    if frequencies and index < len(frequencies):
-                        print(f'    Frequency: \t\t{frequencies[index]} MHz')
+                    if frequencies and policy < len(frequencies):
+                        print(f'    Frequency: \t\t{frequencies[policy]} MHz')
 
     elif '-sg' in args or '--set-governor' in args:
         if os.getuid():
@@ -239,7 +272,24 @@ if __name__ == '__main__':
         if not setMaximumScalingFrequency(frequency, cpu):
             print('Error setting max frequency', file=sys.stderr)
 
-    elif '--maximum-performance' in args:
+    elif '-sep' in args or '--set-energy-preference' in args:
+        if os.getuid():
+            print('Energy performance preference setting requires root privilegies', file=sys.stderr)
+            sys.exit(0)
+
+        try:
+            preference = args[args.index('-sep') + 1]
+
+        except:
+            preference = args[args.index('--set-energy-preference') + 1]
+
+        if '-cpu' in args:
+            cpu = int(args[args.index('-cpu') + 1])
+
+        if not setEnergyPerformancePreference(preference, cpu):
+            print('Error setting energy performance preference', file=sys.stderr)
+
+    elif '-max' in args or '--maximum-performance' in args:
         if os.getuid():
             print('Setting cpu to max performance requires root privilegies', file=sys.stderr)
             sys.exit(0)
@@ -249,6 +299,18 @@ if __name__ == '__main__':
 
         except Exception as e:
             print(f'Error setting cpu to max performance because of: {e}')
+            sys.exit(1)
+
+    elif '-min' in args or '--minimum-performance' in args:
+        if os.getuid():
+            print('Setting cpu to min performance requires root privilegies', file=sys.stderr)
+            sys.exit(0)
+
+        try:
+            minAll()
+
+        except Exception as e:
+            print(f'Error setting cpu to min performance because of: {e}')
             sys.exit(1)
 
     elif '-V' in args or '--version' in args:
