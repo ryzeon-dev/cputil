@@ -163,7 +163,7 @@ FREQUENCIES = readScalingFrequencies()
 GOVERNORS = findAvailableGovernors()
 ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
 
-def setGovernor(governor, cpu):
+def setGovernor(governor, cpu=True):
     global GOVERNORS, CPUFREQ_DIR, POLICIES
 
     if governor not in GOVERNORS:
@@ -306,7 +306,7 @@ def minAll():
 
     for governor in ['powersave', 'schedutil']:
         if governor in GOVERNORS:
-            setGovernor(governor)
+            setGovernor(governor, True)
             break
 
     setMinimumScalingFrequency(minScalingFrequency, True)
