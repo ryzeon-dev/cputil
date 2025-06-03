@@ -108,7 +108,8 @@ def readScalingFrequencies():
                 continue
 
             with open(filePath, 'r') as file:
-                frequencies.add(file.read().strip())
+                for chunk in file.read().strip().split(' '):
+                    frequencies.add(chunk)
 
     frequencies = list(frequencies)
     frequencies.sort(key= lambda x: int(x))
