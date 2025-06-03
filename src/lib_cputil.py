@@ -94,7 +94,7 @@ def readScalingFrequencies():
     global CPUFREQ_CONTENT, CPUFREQ_DIR
     
     frequencies = set()
-    frequencyFiles = ['scaling_max_freq', 'scaling_min_freq', 'amd_pstate_lowest_nonlinear_freq', 'amd_pstate_max_freq', 'cpuinfo_max_freq', 'cpuinfo_min_freq']
+    frequencyFiles = ['scaling_max_freq', 'scaling_min_freq', 'scaling_available_frequencies', 'amd_pstate_lowest_nonlinear_freq', 'amd_pstate_max_freq', 'cpuinfo_max_freq', 'cpuinfo_min_freq']
 
     for e in CPUFREQ_CONTENT:
         if not re.fullmatch('^policy[0-9]{1,3}$', e):
