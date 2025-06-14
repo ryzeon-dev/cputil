@@ -17,21 +17,38 @@ CPU performance utils and information tool CLI & daemon written in Python
 
 # Usage
 ## Utility
-- `cputil` allows to monitor cpu's usage, inspect its properties and set its governor and scaling frequencies
+- running `cputil` with no arguments displays:
+  - available scaling governors
+  - available scaling frequencies
+  - available energy performance preferences 
+  - current configuration for each logical processor
 
-### Setting
+## Setting
 - setting requires root privilegies
-- to set the governor, use the `-sg` or `--set-governor` flag followed by the selected governor
-  - run `cputil` with no argument to view the available governors
-- to set minimum scaling frequency, use the `-sfm` or `--set-minimum-frequency` flag
-  - run `cputil` with no argument to view the available scaling frequencies
-- to set minimum scaling frequency, use the `-sfM` or `--set-maximum-frequency` flag
-  - run `cputil` with no argument to view the available scaling frequencies
+
+#### Governor
+- governor setting can be done running `cputil set governor` (or its abbreviated form `cputil sg`) followed by the desired governor
+- the governor must be one of the system allowed ones, run `cputil` with no argument to inspect available ones 
+
+#### Scaling Frequency
+- minimum scaling frequency can be set running `cputil set frequency minimum` (or its abbreviated form `cputil sfm`) followed by the desired scaling frequency 
+- the scaling frequency must be one of the system allowed ones, run `cputil` with no argument to inspect available ones
+
+- minimum scaling frequency can be set running `cputil set frequency maximum` (or its abbreviated form `cputil sfM`) followed by the desired scaling frequency 
+- the scaling frequency must be one of the system allowed ones, run `cputil` with no argument to inspect available ones
+
+#### Energy performance preference
+- energy performance preference can be set by running `cputil set energy preference` (or its abbreviated form `cputil sep`) followed by the desired energy performance preference
+- the energy performance preference must be one of the system allowed ones, run `cputil` with no argument to inspect available ones
+
+### Processor selection
 - if the flag `-cpu` is added, followed by a logical processor's number, any actions will only affect the specified processor
 - when setting any parameter for the entire CPU, if `cputild` daemon is installed, the configuration file will be overwritten with the new parameters 
 
-- to set the processor to its absolute max performace, run cputil with `-max` or `--maximum-performace` flag, which sets governor to "performace", sets both minimum and maximum scaling frequency to the max allowed value and sets energy performance preference to "performance"
-- to set the processor to its absolute min performace, run cputil with `-min` or `--minimum-performace` flag, which sets governor to the weakest available, sets both minimum and maximum scaling frequency to the min allowed value and sets energy performance preference to "power"
+#### Fast setting
+- maximum or minimum preference can be achieved running `cputil max` or `cputil min`
+  - in the first case, the governor is set to `performance`, minimum and maximum scaling frequencies are set to their max allowed value, the energy performance preference is set to `performance`
+  - in the second case, the governor is set to its weakest value, minimum and maximum scaling frequencies are set to their minimum allowed value, the energy performance preference is set to `power`
 
 ### Inspecting 
 - the inspection of CPU properties is done using the `-i` or `--info` flag
@@ -48,18 +65,18 @@ CPU performance utils and information tool CLI & daemon written in Python
 - the inspection of CPU performance level is done using `cputil` without any flag
 
 ### Usage
-- cpu usage is monitored using `-u` or `--usage` flag
+- cpu usage is monitored using `usage` verb
   - both average and logical processor wise usage is shown
   - if the `-avg` flag is used, only average usage will be shown
 
 ### Json
-- the `-j` or `--json` flags prints all the available information in json format
+- the `json` flags prints all the available information in json format
 
 ### Version
-- using `-V` or `--version` flag prints the current cputil's version
+- using `version` flag prints the current cputil's version
 
 ### Help
-- use `-h` or `--help` to get help
+- use `-help` to get help
 
 ## Daemon
 - useful to set CPU parameters as default
@@ -131,7 +148,7 @@ Processor 31:   powersave governor    frequency max = 5752000, min = 2981000    
 ```
 
 ```
-$ cputil -i
+$ cputil info
 Model name:             AMD Ryzen 9 9950X 16-Core Processor
 Architecture:           amd64 / x86_64 (64bit)
 Byte order:             Little Endian (first bit is LSB)
@@ -369,7 +386,7 @@ Processor 31:
 ```
 
 ```
-$ cputil -u -avg
+$ cputil usage -avg
 Average:
     total:              0.75 %
     user:               0.12 %

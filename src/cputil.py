@@ -1,13 +1,18 @@
+from argparser import ArgParse
+
 from lib_cputil import *
 import json
 
-VERSION = '4.2.4'
+VERSION = '5.0.0'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
     cpu = True
 
-    if not args:
+    argParser = ArgParse()
+    argParser.parse(args)
+
+    if argParser.noArg:
         print('Available governors:')
 
         for governor in GOVERNORS:
@@ -33,7 +38,6 @@ if __name__ == '__main__':
         except:
             freqs = {}
 
-
         try:
             energyPerformance = getCurrentEnergyPerformancePreferences()
 
@@ -48,39 +52,39 @@ if __name__ == '__main__':
 
             if (energyPreference := energyPerformance.get(policy)) is not None:
                 line += f'    energy preference = {energyPreference}'
-            
+
             print(line)
 
-    elif '-h' in args or '--help' in args:
+    elif argParser.help:
         print(f'cputil: cpu utils CLI v{VERSION}')
-        print('usage: cputil [OPTIONS]')
+        print('usage: cputil [COMMAND arg[OPTION]]')
+        print('\nCommands:')
+        print('    set governor (sg) GOVERNOR               Set scaling governor (root)')
+        print('    set frequency minimum (sfm) FREQUENCY    Set minimum scaling frequency (root)')
+        print('    set frequency maximum (sfM) FREQUENCY    Set maximum scaling frequency (root)')
+        print('    set energy preference (sep) PREFERENCE   Set energy performance preference (root)')
+        print('    max                                      Set "performance" governor, set both minimum')
+        print('                                             and maximum scaling frequency to highest allowed value')
+        print('                                             and set energy performance preference to "performance" (root)')
+        print('    min                                      Set "powersave" governor, set both minimum')
+        print('                                             and maximum scaling frequency to lowest allowed value')
+        print('                                             and set energy performance preference to "power" (root)')
+        print('    info                                     Show CPU info')
+        print('    usage                                    Show CPU usage')
+        print('    json                                     Output all available information in JSON format')
+        print('    version                                  Show version')
+        print('    help                                     Show this message and exit')
         print('\nOptions:')
-        print('    -sg  --set-governor          GOVERNOR     Set governor (root)')
-        print('    -sfm --set-minimum-frequency FREQUENCY    Set minimum frequency (root)')
-        print('    -sfM --set-maximum-frequency FREQUENCY    Set maximum frequency (root)')
-        print('    -sep --set-energy-preference PREFERENCE   Set energy performance preference (root)')
-        print('    -max --maximum-performance                Set "performace" governor, set both minimum and')
-        print('                                              maximum scaling frequency to the max allowed value')
-        print('                                              and set energy performance preference to "performance" (root)')
-        print('    -min --minimum-performance                Set weakest governor, set both minimum and')
-        print('                                              maximum scaling frequency to the min allowed value')
-        print('                                              and set energy performance preference to "power" (root)')
-        print('    -cpu CPU                                  Select which processor to affect with action,')
-        print('                                              if omitted the action will affect all processors,')
-        print('                                              to be used with -sg, -sfm, -sfM, -sep, -u')
-        print('    -i   --info                               Show info about CPU')
-        print('    -g                                        Show general info only, to be used only with -i')
-        print('    -u   --usage                              Show CPU usage')
-        print('    -avg                                      If specified, only average usage is shown,')
-        print('                                              to be used only with -u')
-        print('    -j   --json                               Output all the available information in json format')
-        print('    -V   --version                            Show cputil version')
-        print('    -h   --help                               Show this message and exit')
+        print('    -cpu CPU                            Select which logical processor to affect with setting action')
+        print('                                        Works only with "set governor", "set frequency minimum" ')
+        print('                                        and "set frequency maximum"')
+        print('    -g                                  Show general info only, to be used with "info"')
+        print('    -avg                                Show only average usage, to be used with "usage"')
 
-    elif '-j' in args or '--json' in args:
+    elif argParser.json:
         print(json.dumps(jsonFormat()))
 
-    elif '-i' in args or '--info' in args:
+    elif argParser.info:
         model = getModelName()
         if model:
             print(f'Model name:\t\t{model}')
@@ -119,7 +123,7 @@ if __name__ == '__main__':
         if amdPStatePrefcore is not None:
             print(f'AMD P-State prefcore:\t{amdPStatePrefcore}')
 
-        if '-g' in args:
+        if argParser.general:
             sys.exit(0)
 
         try:
@@ -167,17 +171,16 @@ if __name__ == '__main__':
             if dieDistribution is not None:
                 print(f'    Physical die: {dieDistribution[policy]}')
 
-    elif '-u' in args or '--usage' in args:
+    elif argParser.usage:
         try:
             usages = cpuUsage()
             averageFrequency, frequencies = cpuFrequency()
 
-
-        except KeyboardInterrupt:
+        except:
             sys.exit(0)
 
-        if '-cpu' in args:
-            cpuIndex = args[args.index('-cpu') + 1]
+        if argParser.cpu:
+            cpuIndex = argParser.cpu
 
             usage = usages[int(cpuIndex) + 1]
             if frequencies:
@@ -209,7 +212,7 @@ if __name__ == '__main__':
             if averageFrequency:
                 print(f'    Frequency:\t\t{averageFrequency} MHz')
 
-            if '-avg' not in args:
+            if not argParser.avg:
                 for policy, thread in enumerate(usages[1:]):
                     print(f'\nProcessor: {policy}')
 
@@ -224,103 +227,41 @@ if __name__ == '__main__':
                     if frequencies and policy < len(frequencies):
                         print(f'    Frequency: \t\t{frequencies[policy]} MHz')
 
-    elif '-sg' in args or '--set-governor' in args:
+    elif argParser.set:
         if os.getuid():
             print('Governor setting requires root privilegies', file=sys.stderr)
             sys.exit(0)
 
-        try:
-            governor = args[args.index('-sg') + 1]
-        except:
-            governor = args[args.index('--set-governor') + 1]
+        if argParser.setGovernor:
+            if argParser.cpu:
+                cpu = int(argParser.cpu)
 
-        if '-cpu' in args:
-            cpu = int(args[args.index('-cpu') + 1])
+            if not setGovernor(argParser.setGovernor, cpu):
+                print('Error setting governor')
 
-        if not setGovernor(governor, cpu):
-            print('Error setting governor')
+        elif argParser.setFrequency:
+            frequency = None
 
-    elif '-sfm' in args or '--set-min-frequency' in args:
-        if os.getuid():
-            print('Scaling frequency setting requires root privilegies', file=sys.stderr)
-            sys.exit(0)
+            if argParser.cpu:
+                cpu = int(argParser.cpu)
 
-        try:
-            frequency = args[args.index('-sfm') + 1]
-        except:
-            frequency = args[args.index('--set-min-frequency') + 1]
+            if (freq := argParser.setFrequencyMaximum):
+                setMinimumScalingFrequency(freq, cpu)
 
-        if '-cpu' in args:
-            cpu = int(args[args.index('-cpu') + 1])
+            elif (freq := argParser.setFrequencyMinimum):
+                setMaximumScalingFrequency(freq, cpu)
 
-        if not setMinimumScalingFrequency(frequency, cpu):
-            print('Error setting min frequency', file=sys.stderr)
+        elif argParser.setEnergyPerformancePreference:
+            if argParser.cpu:
+                cpu = int(argParser.cpu)
 
-    elif '-sfM' in args or '--set-max-frequency' in args:
-        if os.getuid():
-            print('Scaling frequency setting requires root privilegies', file=sys.stderr)
-            sys.exit(0)
+            preference = setEnergyPerformancePreference(argParser.setEnergyPerformancePreference, cpu)
 
-        try:
-            frequency = args[args.index('-sfM') + 1]
-        except:
-            frequency = args[args.index('--set-max-frequency') + 1]
-
-        if '-cpu' in args:
-            cpu = int(args[args.index('-cpu') + 1])
-
-        if not setMaximumScalingFrequency(frequency, cpu):
-            print('Error setting max frequency', file=sys.stderr)
-
-    elif '-sep' in args or '--set-energy-preference' in args:
-        if os.getuid():
-            print('Energy performance preference setting requires root privilegies', file=sys.stderr)
-            sys.exit(0)
-
-        try:
-            preference = args[args.index('-sep') + 1]
-
-        except:
-            preference = args[args.index('--set-energy-preference') + 1]
-
-        if '-cpu' in args:
-            cpu = int(args[args.index('-cpu') + 1])
-
-        if not setEnergyPerformancePreference(preference, cpu):
-            print('Error setting energy performance preference', file=sys.stderr)
-
-    elif '-max' in args or '--maximum-performance' in args:
-        if os.getuid():
-            print('Setting cpu to max performance requires root privilegies', file=sys.stderr)
-            sys.exit(0)
-
-        try:
-            maxAll()
-
-        except Exception as e:
-            print(f'Error setting cpu to max performance because of: {e}')
-            sys.exit(1)
-
-    elif '-min' in args or '--minimum-performance' in args:
-        if os.getuid():
-            print('Setting cpu to min performance requires root privilegies', file=sys.stderr)
-            sys.exit(0)
-
-        try:
-            minAll()
-
-        except Exception as e:
-            print(f'Error setting cpu to min performance because of: {e}')
-            sys.exit(1)
-
-    elif '-V' in args or '--version' in args:
+    elif argParser.version:
         print(f'cputil v{VERSION}')
 
-    else:
-        arg = args[0]
+    elif argParser.min:
+        minAll()
 
-        if arg[0] == '-':
-            print(f'Error: unrecognised option "{arg}"')
-
-        else:
-            print(f'Error: unrecognised argument "{arg}"')
+    elif argParser.max:
+        maxAll()
