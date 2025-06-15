@@ -3,7 +3,7 @@ from argparser import ArgParse
 from lib_cputil import *
 import json
 
-VERSION = '5.0.0'
+VERSION = '5.0.1'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -246,10 +246,10 @@ if __name__ == '__main__':
                 cpu = int(argParser.cpu)
 
             if (freq := argParser.setFrequencyMaximum):
-                setMinimumScalingFrequency(freq, cpu)
+                setMaximumScalingFrequency(freq, cpu)
 
             elif (freq := argParser.setFrequencyMinimum):
-                setMaximumScalingFrequency(freq, cpu)
+                setMinimumScalingFrequency(freq, cpu)
 
         elif argParser.setEnergyPerformancePreference:
             if argParser.cpu:
