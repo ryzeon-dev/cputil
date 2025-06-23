@@ -547,13 +547,18 @@ def cpuFrequency():
                 freq = readFile(f'{CPUFREQ_DIR}/{policy}/cpuinfo_cur_freq')
 
             except:
-                return None, None
+                frequencies.append(0)
 
             else:
                 freq = round(float(freq) / 1000, 2)
                 frequencies.append(freq)
 
-        avg = round(sum(frequencies) / len(frequencies), 2)
+        nonZeroFreqs = []
+        for freq in frequencies:
+            if freq:
+                nonZeroFreqs.append(freq)
+
+        avg = round(sum(nonZeroFreqs) / len(nonZeroFreqs), 2)
         return avg, frequencies
 
     else:
