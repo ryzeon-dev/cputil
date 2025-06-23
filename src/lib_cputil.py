@@ -533,11 +533,9 @@ def cpuFrequency():
     lines = grep(readFile('/proc/cpuinfo'), 'cpu MHz')
     frequencies = []
 
-    if lines is None:
-        return None, None
-
-    for line in lines:
-        frequencies.append(line.split(':')[1].strip())
+    if lines is not None:
+        for line in lines:
+            frequencies.append(line.split(':')[1].strip())
 
     if not frequencies or frequencies == ['']:
         frequencies = []
