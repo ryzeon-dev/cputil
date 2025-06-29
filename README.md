@@ -2,6 +2,27 @@
 CPU performance utils and information tool CLI & daemon written in Python
 
 # Install
+
+### One liner
+amd64
+```commandline
+wget https://github.com/ryzeon-dev/cputil/releases/download/v5.0.1/cputil_v5.0.1_amd64.tar && tar -xf cputil_v5.0.1_amd64.tar && cd cputil_v5.0.1_amd64 && sudo bash install.sh all
+```
+
+arm64
+```commandline
+wget https://github.com/ryzeon-dev/cputil/releases/download/v5.0.1/cputil_v5.0.1_arm64.tar && tar -xf cputil_v5.0.1_arm64.tar && cd cputil_v5.0.1_arm64 && sudo bash install.sh all
+```
+
+### Pre-built packages
+- pre-built packages are available for amd64 and arm64 architectures, and can be downloaded from the [releases section]( https://github.com/ryzeon-dev/cputil/releases )
+- once extracted the `tar` file, enter the extracted directory and run 
+  - `sudo bash install.sh bin` to only install the utility program
+  - `sudo bash install.sh daemon` to only install the daemon
+  - `sudo bash install.sh all` to install both
+
+### Compile from source and install
+
 - compilation requires `python3`, `python3-venv` and `python3-pip` to be installed
 - use the `install.sh` script, executing it as root
   - run `sudo bash install.sh bin` to only install the utility program
@@ -90,6 +111,7 @@ CPU performance utils and information tool CLI & daemon written in Python
   - governor
   - min_scaling_frequency
   - max_scaling_frequency
+  - energy_performance_preference
   - polling_interval (default value is 10 seconds)
 
 ## Example outputs

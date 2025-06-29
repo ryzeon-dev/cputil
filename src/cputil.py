@@ -3,7 +3,7 @@ from argparser import ArgParse
 from lib_cputil import *
 import json
 
-VERSION = '5.1.0'
+VERSION = '5.2.0'
 
 if __name__ == '__main__':
     args = sys.argv[1:]

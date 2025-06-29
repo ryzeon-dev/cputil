@@ -3,7 +3,7 @@ from conf import *
 
 while True:
     try:
-        governor, minScalingFreq, maxScalingFreq, pollingInterval = parseConf(confFilePath)
+        governor, minScalingFreq, maxScalingFreq, energyPerformancePreference, pollingInterval = parseConf(confFilePath)
 
     except:
         time.sleep(10)
@@ -17,5 +17,8 @@ while True:
 
     if maxScalingFreq is not None and maxScalingFreq != 'auto':
         setMaximumScalingFrequency(maxScalingFreq, True)
+
+    if energyPerformancePreference is not None and energyPerformancePreference != 'auto':
+        setEnergyPerformancePreference(energyPerformancePreference, True)
 
     time.sleep(int(pollingInterval) if pollingInterval is not None else 10)

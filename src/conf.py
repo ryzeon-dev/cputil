@@ -7,6 +7,7 @@ def parseConf(path):
     governor = None
     scalingMinFreq = None
     scalingMaxFreq = None
+    energyPerformancePreference = None
     pollingInterval = None
 
     for line in content.split('\n'):
@@ -22,15 +23,18 @@ def parseConf(path):
         elif (prompt := 'max_scaling_frequency:') in line:
             scalingMaxFreq = line.replace(prompt, '').strip()
 
+        elif (prompt := 'energy_performance_preference') in line:
+            energyPerformancePreference = line.replace(prompt, '').strip()
+
         elif (prompt := 'polling_interval:') in line:
             try:
                 pollingInterval = line.replace(prompt, '').strip()
             except:
                 pass
 
-    return governor, scalingMinFreq, scalingMaxFreq, pollingInterval
+    return governor, scalingMinFreq, scalingMaxFreq, energyPerformancePreference, pollingInterval
 
-def editConf(path, governor, scalingMinFreq, scalingMaxFreq):
+def editConf(path, governor=None, scalingMinFreq=None, scalingMaxFreq=None, energyPerformancePreference=None):
     with open(path, 'r') as file:
         content = file.read()
 
@@ -55,6 +59,10 @@ def editConf(path, governor, scalingMinFreq, scalingMaxFreq):
         if scalingMinFreq is not None:
             if line.startswith('min_scaling_frequency:'):
                 splitted[index] = f'min_scaling_frequency: {scalingMinFreq}'
+
+        if energyPerformancePreference is not None:
+            if line.startswith('energy_performance_preference:'):
+                splitted[index] = f'energy_performance_preference: {energyPerformancePreference}'
 
         index += 1
 

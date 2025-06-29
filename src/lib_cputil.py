@@ -7,6 +7,8 @@ import string
 from conf import confFilePath, editConf
 import re
 
+### UTILS ###
+
 def grep(target, pattern, returnFirstMatch=False, count=False, ignoreCase=False):
     res = []
 
@@ -73,28 +75,14 @@ def writePolicyFile(policy, file, content):
 
     return True
 
-CPUFREQ_DIR = '/sys/devices/system/cpu/cpufreq'
-
-try:
-    CPUFREQ_CONTENT = os.listdir(CPUFREQ_DIR)
-
-except:
-    print('Error: cannot access cpufreq\'s sysfs')
-    exit(1)
-    
-GOVERNORS = []
-
-POLICIES = getPolicies()
-
-GENERAL_DRIVER = '/sys/devices/system/cpu/'
-FREQUENCIES = []
-ENERGY_PERFORMANCE_PREFERENCES = []
+### SYSFS CONST READER ###
 
 def readScalingFrequencies():
     global CPUFREQ_CONTENT, CPUFREQ_DIR
-    
+
     frequencies = set()
-    frequencyFiles = ['scaling_max_freq', 'scaling_min_freq', 'scaling_available_frequencies', 'amd_pstate_lowest_nonlinear_freq', 'amd_pstate_max_freq', 'cpuinfo_max_freq', 'cpuinfo_min_freq']
+    frequencyFiles = ['scaling_max_freq', 'scaling_min_freq', 'scaling_available_frequencies',
+                      'amd_pstate_lowest_nonlinear_freq', 'amd_pstate_max_freq', 'cpuinfo_max_freq', 'cpuinfo_min_freq']
 
     for e in CPUFREQ_CONTENT:
         if not re.fullmatch('^policy[0-9]{1,3}$', e):
@@ -112,12 +100,12 @@ def readScalingFrequencies():
                     frequencies.add(chunk)
 
     frequencies = list(frequencies)
-    frequencies.sort(key= lambda x: int(x))
+    frequencies.sort(key=lambda x: int(x))
     return frequencies
 
 def findAvailableGovernors():
     global CPUFREQ_CONTENT, CPUFREQ_DIR
-    
+
     governors = set()
     governorFiles = ['scaling_available_governors']
 
@@ -160,11 +148,27 @@ def getEnergyPerformancePreferences():
 
     return list(preferences)
 
+### CONST ###
+
+CPUFREQ_DIR = '/sys/devices/system/cpu/cpufreq'
+
+try:
+    CPUFREQ_CONTENT = os.listdir(CPUFREQ_DIR)
+
+except:
+    print('Error: cannot access cpufreq\'s sysfs')
+    exit(1)
+
+POLICIES = getPolicies()
+GENERAL_DRIVER = '/sys/devices/system/cpu/'
+
 FREQUENCIES = readScalingFrequencies()
 GOVERNORS = findAvailableGovernors()
 ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
 
-def setGovernor(governor, cpu=True):
+### SETTERS ###
+
+def setGovernor(governor, cpu=True, updateConf=True):
     global GOVERNORS, CPUFREQ_DIR, POLICIES
 
     if governor not in GOVERNORS:
@@ -178,8 +182,8 @@ def setGovernor(governor, cpu=True):
             if not writePolicyFile(policy, 'scaling_governor', governor):
                 return False
 
-        if os.path.exists(confFilePath):
-            editConf(confFilePath, governor, None, None)
+        if os.path.exists(confFilePath) and updateConf:
+            editConf(confFilePath, governor=governor)
 
         return True
 
@@ -194,6 +198,134 @@ def setGovernor(governor, cpu=True):
 
             return True
         return False
+
+def setMinimumScalingFrequency(frequency, cpu, updateConf=True):
+    global FREQUENCIES, CPUFREQ_DIR, POLICIES
+    if FREQUENCIES is None:
+        print(f'Error: cputil is unable to detect allowed scaling frequencies')
+        return False
+
+    if frequency not in FREQUENCIES:
+        print(f'Error: `{frequency}` is not one of the allowed scaling frequencies')
+        return False
+
+    if cpu is True:
+        print('Setting for all processors minimum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
+
+        for policy in POLICIES:
+            if not writePolicyFile(policy, 'scaling_min_freq', frequency):
+                return False
+
+        if updateConf and os.path.exists(confFilePath):
+            editConf(confFilePath, scalingMinFreq=frequency)
+
+        return True
+
+    else:
+        policy = f'policy{cpu}'
+
+        if policy in POLICIES:
+            print('Setting for processor ' + str(cpu) + ' minimum frequency to ' + str(
+                round(int(frequency) / 1000000, 1)) + ' GHz')
+
+            if not writePolicyFile(policy, 'scaling_min_freq', frequency):
+                return False
+
+            return True
+
+        return False
+
+def setMaximumScalingFrequency(frequency, cpu, updateConf=True):
+    global FREQUENCIES, POLICIES, CPUFREQ_DIR
+
+    if FREQUENCIES is None:
+        print(f'Error: cputil.py is unable to detect allowed scaling frequencies')
+        return False
+
+    if frequency not in FREQUENCIES:
+        print(f'Error: `{frequency}` is not one of the allowed scaling frequencies')
+        return False
+
+    if cpu is True:
+        print('Setting for all processors maximum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
+
+        for policy in POLICIES:
+            if not writePolicyFile(policy, 'scaling_max_freq', frequency):
+                return False
+
+        if updateConf and os.path.exists(confFilePath):
+            editConf(confFilePath, scalingMaxFreq=frequency)
+
+        return True
+
+    else:
+        policy = f'policy{cpu}'
+
+        if policy in POLICIES:
+            print('Setting for processor ' + str(cpu) + ' maximum frequency to ' + str(
+                round(int(frequency) / 1000000, 1)) + ' GHz')
+
+            if not writePolicyFile(policy, 'scaling_max_freq', frequency):
+                return False
+            return True
+        return False
+
+def setEnergyPerformancePreference(preference, cpu, updateConf=True):
+    if ENERGY_PERFORMANCE_PREFERENCES is None:
+        print(f'Error: cputil is unable to detect allowed energy performance preferences')
+        return False
+
+    if preference not in ENERGY_PERFORMANCE_PREFERENCES:
+        print(f'Error: `{preference}` is not one of the allowed energy performance preferences')
+        return False
+
+    if cpu is True:
+        print('Setting for all processors energy performance preference to ' + preference)
+
+        for policy in POLICIES:
+            if not writePolicyFile(policy, 'energy_performance_preference', preference):
+                return False
+
+        if updateConf and os.path.exists(confFilePath):
+            editConf(confFilePath, energyPerformancePreference=preference)
+
+        return True
+
+    else:
+        policy = f'policy{cpu}'
+
+        if policy in POLICIES:
+            print('Setting for processor ' + str(cpu) + ' energy performance preference to ' + preference)
+
+            if not writePolicyFile(policy, 'energy_performance_preference', preference):
+                return False
+
+            return True
+        return False
+
+def maxAll():
+    maxScalingFrequency = str(max(int(freq) for freq in FREQUENCIES))
+    setGovernor('performance', True)
+
+    setMinimumScalingFrequency(maxScalingFrequency, True)
+    setMaximumScalingFrequency(maxScalingFrequency, True)
+
+    setEnergyPerformancePreference('performance', True)
+
+def minAll():
+    minScalingFrequency = str(min(int(freq) for freq in FREQUENCIES))
+
+    for governor in ['powersave', 'schedutil']:
+        if governor in GOVERNORS:
+            setGovernor(governor, True)
+            break
+
+    setMinimumScalingFrequency(minScalingFrequency, True)
+    setMaximumScalingFrequency(minScalingFrequency, True)
+
+    setEnergyPerformancePreference('power', True)
+
+### CURRENT STATUS GETTERS ###
 
 def getCurrentGovernors():
     global CPUFREQ_DIR, POLICIES
@@ -222,99 +354,6 @@ def getCurrentScalingFrequencies():
 
     return frequencies
 
-def setMinimumScalingFrequency(frequency, cpu):
-    global FREQUENCIES, CPUFREQ_DIR, POLICIES
-    if FREQUENCIES is None:
-        print(f'Error: cputil is unable to detect allowed scaling frequencies')
-        return False
-
-    if frequency not in FREQUENCIES:
-        print(f'Error: `{frequency}` is not one of the allowed scaling frequencies')
-        return False
-
-    if cpu is True:
-        print('Setting for all processors minimum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
-
-        for policy in POLICIES:
-            if not writePolicyFile(policy, 'scaling_min_freq', frequency):
-                return False
-
-        if os.path.exists(confFilePath):
-            editConf(confFilePath, None, frequency, None)
-
-        return True
-
-    else:
-        policy = f'policy{cpu}'
-
-        if policy in POLICIES:
-            print('Setting for processor ' + str(cpu) + ' minimum frequency to ' + str(
-                round(int(frequency) / 1000000, 1)) + ' GHz')
-
-            if not writePolicyFile(policy, 'scaling_min_freq', frequency):
-                return False
-
-            return True
-
-        return False
-
-def setMaximumScalingFrequency(frequency, cpu):
-    global FREQUENCIES, POLICIES, CPUFREQ_DIR
-
-    if FREQUENCIES is None:
-        print(f'Error: cputil.py is unable to detect allowed scaling frequencies')
-        return False
-
-    if frequency not in FREQUENCIES:
-        print(f'Error: `{frequency}` is not one of the allowed scaling frequencies')
-        return False
-
-    if cpu is True:
-        print('Setting for all processors maximum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
-
-        for policy in POLICIES:
-            if not writePolicyFile(policy, 'scaling_max_freq', frequency):
-                return False
-
-        if os.path.exists(confFilePath):
-            editConf(confFilePath, None, None, frequency)
-
-        return True
-
-    else:
-        policy = f'policy{cpu}'
-
-        if policy in POLICIES:
-            print('Setting for processor ' + str(cpu) + ' maximum frequency to ' + str(
-                round(int(frequency) / 1000000, 1)) + ' GHz')
-
-            if not writePolicyFile(policy, 'scaling_max_freq', frequency):
-                return False
-            return True
-        return False
-
-def maxAll():
-    maxScalingFrequency = str(max(int(freq) for freq in FREQUENCIES))
-    setGovernor('performance', True)
-
-    setMinimumScalingFrequency(maxScalingFrequency, True)
-    setMaximumScalingFrequency(maxScalingFrequency, True)
-
-    setEnergyPerformancePreference('performance', True)
-
-def minAll():
-    minScalingFrequency = str(min(int(freq) for freq in FREQUENCIES))
-
-    for governor in ['powersave', 'schedutil']:
-        if governor in GOVERNORS:
-            setGovernor(governor, True)
-            break
-
-    setMinimumScalingFrequency(minScalingFrequency, True)
-    setMaximumScalingFrequency(minScalingFrequency, True)
-
-    setEnergyPerformancePreference('power', True)
-
 def getCurrentEnergyPerformancePreferences():
     global CPUFREQ_DIR, CPUFREQ_CONTENT
     currentEnergyPreferences = {}
@@ -330,34 +369,7 @@ def getCurrentEnergyPerformancePreferences():
 
     return currentEnergyPreferences
 
-def setEnergyPerformancePreference(preference, cpu):
-    if ENERGY_PERFORMANCE_PREFERENCES is None:
-        print(f'Error: cputil is unable to detect allowed energy performance preferences')
-        return False
-
-    if preference not in ENERGY_PERFORMANCE_PREFERENCES:
-        print(f'Error: `{preference}` is not one of the allowed energy performance preferences')
-        return False
-
-    if cpu is True:
-        print('Setting for all processors energy performance preference to ' + preference)
-
-        for policy in POLICIES:
-            if not writePolicyFile(policy, 'energy_performance_preference', preference):
-                return False
-
-        return True
-
-    else:
-        policy = f'policy{cpu}'
-
-        if policy in POLICIES:
-            print('Setting for processor ' + str(cpu) + ' energy performance preference to ' + preference)
-
-            if not writePolicyFile(policy, 'energy_performance_preference', preference):
-                return False
-            return True
-        return False
+### INFO && USAGE READERS ###
 
 def getModelName():
     procCpuinfo = readFile('/proc/cpuinfo').split('\n')
