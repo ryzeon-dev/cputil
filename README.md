@@ -6,12 +6,12 @@ CPU performance utils and information tool CLI & daemon written in Python
 ### One liner
 amd64
 ```commandline
-wget https://github.com/ryzeon-dev/cputil/releases/download/v5.0.1/cputil_v5.0.1_amd64.tar && tar -xf cputil_v5.0.1_amd64.tar && cd cputil_v5.0.1_amd64 && sudo bash install.sh all
+wget https://github.com/ryzeon-dev/cputil/releases/download/v5.2.0/cputil_v5.2.0_amd64.tar && tar -xf cputil_v5.2.0_amd64.tar && cd cputil_v5.2.0_amd64 && sudo bash install.sh all
 ```
 
 arm64
 ```commandline
-wget https://github.com/ryzeon-dev/cputil/releases/download/v5.0.1/cputil_v5.0.1_arm64.tar && tar -xf cputil_v5.0.1_arm64.tar && cd cputil_v5.0.1_arm64 && sudo bash install.sh all
+wget https://github.com/ryzeon-dev/cputil/releases/download/v5.2.0/cputil_v5.2.0_arm64.tar && tar -xf cputil_v5.2.0_arm64.tar && cd cputil_v5.2.0_arm64 && sudo bash install.sh all
 ```
 
 ### Pre-built packages
