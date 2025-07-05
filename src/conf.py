@@ -23,7 +23,7 @@ def parseConf(path):
         elif (prompt := 'max_scaling_frequency:') in line:
             scalingMaxFreq = line.replace(prompt, '').strip()
 
-        elif (prompt := 'energy_performance_preference') in line:
+        elif (prompt := 'energy_performance_preference:') in line:
             energyPerformancePreference = line.replace(prompt, '').strip()
 
         elif (prompt := 'polling_interval:') in line:

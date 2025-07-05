@@ -11,45 +11,54 @@ makeVenv() {
 }
 
 removeInstallFiles() {
-    deactivate
-    rm -rf ./build ./venv ./dist
+    rm -rf ./build
 }
 
 installDaemon() {
     mkdir -p /etc/cputild/bin
+    mkdir -p /etc/cputild/templates
 
     cp ./src/cputild.conf /etc/cputild
     cp ./src/cputild.service /etc/cputild
 
-    pyinstaller --onefile ./src/cputild.py --name cputild
-    cp ./dist/cputild /etc/cputild/bin
-    rm -rf ./cputild.spec
+    mkdir -p ./build
+    cd build
+
+    cmake ../daemon_src
+    make
+
+    cp ./cputild /etc/cputild/bin
+    cd ..
 
     systemctl enable /etc/cputild/cputild.service 
     systemctl start cputild
 }
 
 installBin() {
-    pyinstaller --onefile ./src/cputil.py --name cputil
+    mkdir -p ./build
+    cd build
+
+    makeVenv
+
+    pyinstaller --onefile ../src/cputil.py --name cputil
     cp ./dist/cputil /usr/local/bin
-    rm -rf ./cputil.spec 
+    cd ..
 }
 
 if [ "$1" == "daemon" ]; then
-    makeVenv
     installDaemon
     removeInstallFiles
 
 elif [ "$1" == "bin" ]; then
-    makeVenv
     installBin
+    deactivate
     removeInstallFiles
 
 elif [ "$1" == "all" ]; then
-    makeVenv
     installDaemon
     installBin
-    removeInstallFiles
+    deactivate
+#    removeInstallFiles
 
 else
     echo "usage: install.sh (daemon | bin | all)"

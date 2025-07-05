@@ -1,9 +1,11 @@
 from argparser import ArgParse
 
 from lib_cputil import *
+import lib_cputil
 import json
+import conf
 
-VERSION = '5.2.0'
+VERSION = '5.3.0'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -69,6 +71,9 @@ if __name__ == '__main__':
         print('    min                                      Set "powersave" governor, set both minimum')
         print('                                             and maximum scaling frequency to lowest allowed value')
         print('                                             and set energy performance preference to "power" (root)')
+        print('    load CONF_FILE                           Loads template file configuration; CONF_FILE can either be')
+        print('                                             a filepath or the name of a file located in the templates')
+        print('                                             directory at /etc/cputild/templates/ (root)')
         print('    info                                     Show CPU info')
         print('    usage                                    Show CPU usage')
         print('    json                                     Output all available information in JSON format')
@@ -238,6 +243,7 @@ if __name__ == '__main__':
 
             if not setGovernor(argParser.setGovernor, cpu):
                 print('Error setting governor')
+                sys.exit(1)
 
         elif argParser.setFrequency:
             frequency = None
@@ -246,16 +252,22 @@ if __name__ == '__main__':
                 cpu = int(argParser.cpu)
 
             if (freq := argParser.setFrequencyMaximum):
-                setMaximumScalingFrequency(freq, cpu)
+                if not setMaximumScalingFrequency(freq, cpu):
+                    print('Error setting maximum scaling frequency')
+                    sys.exit(1)
 
             elif (freq := argParser.setFrequencyMinimum):
-                setMinimumScalingFrequency(freq, cpu)
+                if not setMinimumScalingFrequency(freq, cpu):
+                    print('Error setting maximum scaling frequency')
+                    sys.exit(1)
 
         elif argParser.setEnergyPerformancePreference:
             if argParser.cpu:
                 cpu = int(argParser.cpu)
 
-            preference = setEnergyPerformancePreference(argParser.setEnergyPerformancePreference, cpu)
+            if not setEnergyPerformancePreference(argParser.setEnergyPerformancePreference, cpu):
+                print('Error setting energy performance preference')
+                sys.exit(1)
 
     elif argParser.version:
         print(f'cputil v{VERSION}')
@@ -265,3 +277,39 @@ if __name__ == '__main__':
 
     elif argParser.max:
         maxAll()
+
+    elif argParser.load:
+        if os.path.isabs(argParser.loadFileName):
+            filePath = argParser.loadFileName
+
+        else:
+            if not argParser.loadFileName.endswith('.conf'):
+                argParser.loadFileName += '.conf'
+
+            filePath = os.path.join("/etc/cputild/templates", argParser.loadFileName)
+
+        if not os.path.exists(filePath):
+            print(f'Error: no such file `{filePath}`')
+            sys.exit(1)
+
+        governor, scalingMinFreq, scalingMaxFreq, energyPerformancePreference, _ = conf.parseConf(filePath)
+
+        if governor and governor != "auto":
+            if not setGovernor(governor, True):
+                print('Error setting governor')
+                sys.exit(1)
+
+        if scalingMinFreq and scalingMinFreq != "auto":
+            if not setMinimumScalingFrequency(scalingMinFreq, True):
+                print('Error setting minimum scaling frequency')
+                sys.exit(1)
+
+        if scalingMaxFreq and scalingMaxFreq != "auto":
+            if not setMaximumScalingFrequency(scalingMaxFreq, True):
+                print('Error setting maximum scaling frequency')
+                sys.exit(1)
+
+        if energyPerformancePreference and energyPerformancePreference != "auto":
+            if not setEnergyPerformancePreference(energyPerformancePreference, True):
+                print('Error setting energy performance preference')
+                sys.exit(1)

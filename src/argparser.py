@@ -10,6 +10,8 @@ class ArgParse:
         self.setEnergyPerformancePreference = None
         self.max = False
         self.min = False
+        self.load = False
+        self.loadFileName = None
         self.info = False
         self.usage = False
         self.json = False
@@ -134,6 +136,16 @@ class ArgParse:
 
             elif arg == 'max':
                 self.max = True
+
+            elif arg == 'load':
+                self.load = True
+
+                index += 1
+                if index >= len(args):
+                    print('Error: expecting configuration file name after `load` verb')
+                    sys.exit(1)
+
+                self.loadFileName = args[index]
 
             elif arg == 'info':
                 self.info = True

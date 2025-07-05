@@ -271,6 +271,11 @@ def setMaximumScalingFrequency(frequency, cpu, updateConf=True):
         return False
 
 def setEnergyPerformancePreference(preference, cpu, updateConf=True):
+    global ENERGY_PERFORMANCE_PREFERENCES
+
+    # changing governor requires reaload of energy performance preferences
+    ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
+
     if ENERGY_PERFORMANCE_PREFERENCES is None:
         print(f'Error: cputil is unable to detect allowed energy performance preferences')
         return False

@@ -23,7 +23,13 @@ wget https://github.com/ryzeon-dev/cputil/releases/download/v5.0.1/cputil_v5.0.1
 
 ### Compile from source and install
 
-- compilation requires `python3`, `python3-venv` and `python3-pip` to be installed
+- compilation requires 
+  - `python3`
+  - `python3-venv`
+  - `python3-pip` 
+  - `cmake`
+  - `make`
+  - `build-essential`
 - use the `install.sh` script, executing it as root
   - run `sudo bash install.sh bin` to only install the utility program
   - run `sudo bash install.sh daemon` to only install the daemon
@@ -70,6 +76,14 @@ wget https://github.com/ryzeon-dev/cputil/releases/download/v5.0.1/cputil_v5.0.1
 - maximum or minimum preference can be achieved running `cputil max` or `cputil min`
   - in the first case, the governor is set to `performance`, minimum and maximum scaling frequencies are set to their max allowed value, the energy performance preference is set to `performance`
   - in the second case, the governor is set to its weakest value, minimum and maximum scaling frequencies are set to their minimum allowed value, the energy performance preference is set to `power`
+
+- to create a custom configuration
+  - copy `./src/src.conf` file into the destination file you wish
+    - if you want to load the configuration without specifying full path, save it under `/etc/cputild/templates/`
+  - tweak the parameters as you wish (respecting your system's available ones)
+- to load a custom configuration
+  - run `sudo cputil load conf_name` if the configuration file in saved into `/etc/cputild/templates`
+  - or run `sudo cputil load /path/to/conf` if it's saved anywhere else
 
 ### Inspecting 
 - the inspection of CPU properties is done using the `-i` or `--info` flag
