@@ -15,6 +15,7 @@ class ArgParse:
         self.info = False
         self.usage = False
         self.json = False
+        self.yaml = False
         self.help = False
         self.version = False
         self.cpu = None
@@ -156,6 +157,9 @@ class ArgParse:
             elif arg == 'json':
                 self.json = True
 
+            elif arg == 'yaml':
+                self.yaml = True
+
             elif arg == 'version':
                 self.version = True
 
@@ -179,5 +183,6 @@ class ArgParse:
 
             else:
                 print(f'Error: unrecognised argument `{arg}`, run `cputil help` to get help')
+                sys.exit(1)
 
             index += 1

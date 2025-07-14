@@ -697,27 +697,28 @@ def processorSort(processors):
 def wrap(string):
     return '"' + string + '"'
 
-def jsonFormat():
-    json = {}
+def dictFormat():
+    dict = {}
 
-    json["model name"] = getModelName()
-    json['architecture'] = getArchitecture()
-    json['byte order'] = getByteOrder()[0]
+    dict["model name"] = getModelName()
+    dict['architecture'] = getArchitecture()
+    dict['byte order'] = getByteOrder()[0]
 
-    json['core count'] = int(getCoreCount())
-    json['thread count'] = int(getThreadCount())
+    dict['core count'] = int(getCoreCount())
+    dict['thread count'] = int(getThreadCount())
 
-    json['clock boost'] = getClockBoost()
-    json['minimum frequency'] = int(float(getMinimumClock()) * 1000)
-    json['maximum frequency'] = int(float(getMaximumClock()) * 1000)
+    dict['clock boost'] = getClockBoost()
+    dict['minimum frequency'] = int(float(getMinimumClock()) * 1000)
+    dict['maximum frequency'] = int(float(getMaximumClock()) * 1000)
 
-    json['governors'] = [governor for governor in GOVERNORS]
-    json['scaling frequencies'] = [int(frequency) for frequency in FREQUENCIES]
+    dict['governors'] = [governor for governor in GOVERNORS]
+    dict['scaling frequencies'] = [int(frequency) for frequency in FREQUENCIES]
+    dict['energy performance preferences'] = [epp for epp in ENERGY_PERFORMANCE_PREFERENCES]
 
     status, prefcore = getAmdPState()
 
-    json['amd-p-state-status'] = status
-    json['amd-p-state-prefcore'] = prefcore
+    dict['amd-p-state-status'] = status
+    dict['amd-p-state-prefcore'] = prefcore
 
     scalingFrequencies = getCurrentScalingFrequencies()
     governors = getCurrentGovernors()
@@ -735,25 +736,23 @@ def jsonFormat():
     dieDist = processorDieDistribution()
     energyPerformancePreferences = getCurrentEnergyPerformancePreferences()
 
-    json['average'] = {
+    dict['average'] = {
         "usage": {}
     }
 
     for label, percent in usages.pop(0).items():
-        json['average']['usage'][label] = float(percent)
+        dict['average']['usage'][label] = float(percent)
 
-    json['average']['frequency'] = int(averageFrequency) if averageFrequency else ''
+    dict['average']['frequency'] = int(averageFrequency) if averageFrequency else ''
 
     sortedCache = processorSort(cache.keys())
 
     for index, processor in enumerate(usages):
         processorId = 'processor' + str(index)
-        json[processorId] = {
+        dict[processorId] = {
             'usage': {},
             'frequency': '',
             'cache': {},
-            'physical core': '',
-            'physical die': '',
             'minimum scaling frequency': '',
             'maximum scaling frequency': '',
             'governor': '',
@@ -762,33 +761,35 @@ def jsonFormat():
 
         try:
             scaling = scalingFrequencies[f'policy{index}']
-            json[processorId]['minimum scaling frequency'] = int(scaling['min'])
-            json[processorId]['maximum scaling frequency'] = int(scaling['max'])
+            dict[processorId]['minimum scaling frequency'] = int(scaling['min'])
+            dict[processorId]['maximum scaling frequency'] = int(scaling['max'])
 
         except:
             pass
 
         try:
             governor = governors[f'policy{index}']
-            json[processorId]['governor'] = str(governor)
+            dict[processorId]['governor'] = str(governor)
 
         except:
             pass
 
         try:
             preference = energyPerformancePreferences[f'policy{index}']
-            json[processorId]['energy performance preference'] = str(preference)
+            dict[processorId]['energy performance preference'] = str(preference)
 
         except:
             pass
 
         for label, percent in processor.items():
-            json[processorId]['usage'][label] = float(percent)
+            dict[processorId]['usage'][label] = float(percent)
 
-        json[processorId]['frequency'] = int(frequencies[index]) if frequencies and index < len(frequencies) and \
-                                                                    frequencies[index] is not None else ''
-        json[processorId]['physical core'] = int(threadDist[index])
-        json[processorId]['physical die'] = int(dieDist[index]) if dieDist else ''
+        dict[processorId]['frequency'] = int(frequencies[index]) if frequencies and index < len(frequencies) and frequencies[index] is not None else ''
+        if threadDist:
+            dict[processorId]['physical core'] = int(threadDist[index])
+
+        if dieDist:
+            dict[processorId]['physical die'] = int(dieDist[index]) if dieDist else ''
 
         if cache is not None:
             processorCacheKey = sortedCache[index]
@@ -798,11 +799,11 @@ def jsonFormat():
                 if len(sharing) == int(getThreadCount()):
                     sharing = ['all']
 
-                json[processorId]['cache']['L' + str(cacheLevel)] = {
+                dict[processorId]['cache']['L' + str(cacheLevel)] = {
                     'sharing': [", ".join((str(processor)) for processor in sharing)],
                     "amount": int(level) if
                     isinstance((level := cache[processorCacheKey][cacheLevel]['amount']), str) and level.isdigit()
                     else level
                 }
 
-    return json
+    return dict

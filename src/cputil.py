@@ -1,11 +1,12 @@
 from argparser import ArgParse
-
 from lib_cputil import *
-import lib_cputil
+
 import json
 import conf
+import yaml
+import sys
 
-VERSION = '5.3.0'
+VERSION = '5.4.0'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -77,6 +78,7 @@ if __name__ == '__main__':
         print('    info                                     Show CPU info')
         print('    usage                                    Show CPU usage')
         print('    json                                     Output all available information in JSON format')
+        print('    yaml                                     Output all available information in YAML format')
         print('    version                                  Show version')
         print('    help                                     Show this message and exit')
         print('\nOptions:')
@@ -87,7 +89,10 @@ if __name__ == '__main__':
         print('    -avg                                Show only average usage, to be used with "usage"')
 
     elif argParser.json:
-        print(json.dumps(jsonFormat()))
+        print(json.dumps(dictFormat()))
+
+    elif argParser.yaml:
+        yaml.dump(dictFormat(), stream=sys.stdout)
 
     elif argParser.info:
         model = getModelName()
