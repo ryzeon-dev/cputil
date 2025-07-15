@@ -39,6 +39,7 @@ installBin() {
     cd build
 
     makeVenv
+    pip install pyyaml
 
     pyinstaller --onefile ../src/cputil.py --name cputil
     cp ./dist/cputil /usr/local/bin
