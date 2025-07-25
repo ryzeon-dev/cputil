@@ -415,49 +415,45 @@ def getArchitecture():
         arch = 'arm64 / aarch64'
 
     elif not arch:
-        'amd64 / x86_64 ' if sys.maxsize == (2 ** 63 - 1) else 'i386 / i686'
+        arch = 'amd64 / x86_64 ' if sys.maxsize == (2 ** 63 - 1) else 'i386 / i686'
 
     busSize = platform.architecture()[0]
 
     if not busSize:
-        busSize = '64 bit' if sys.maxsize == (2 ** 63 - 1) else '32 bit'
+        busSize = '64bit' if sys.maxsize == (2 ** 63 - 1) else '32bit'
 
     return f'{arch} ({busSize})'
 
-def getDistinct(list):
-    distinct = []
-
-    for element in list:
-        if element not in distinct:
-            distinct.append(element)
-
-    return distinct
-
 def getCoreCount():
     global GENERAL_DRIVER
-    try:
-        cores = terminal(f'cat {GENERAL_DRIVER}/cpu*/topology/core_id').strip().split('\n')
-    except:
-        return ''
+    coreIds = set()
 
-    return str(len(getDistinct(cores)))
+    for cpu in os.listdir(GENERAL_DRIVER):
+        if not re.fullmatch('^cpu[0-9]{1,3}$', cpu):
+            continue
+
+        coreId = readFile(f'{GENERAL_DRIVER}/{cpu}/topology/core_id').strip()
+
+        if coreId:
+            coreIds.add(coreId)
+
+    return cores if (cores := len(coreIds)) else None
 
 def getThreadCount():
-    return grep(readFile('/proc/cpuinfo'), 'processor', count=True)
+    return threads if (threads := grep(readFile('/proc/cpuinfo'), 'processor', count=True)) else None
 
 def getClockBoost():
     global CPUFREQ_DIR
+
     try:
         if 'boost' in os.listdir(CPUFREQ_DIR):
-
             with open(f'{CPUFREQ_DIR}/boost', 'r') as file:
                 return 'active' if '1' in file.read() else 'not active'
 
-        else:
-            return 'not available'
-
     except:
-        return 'not available'
+        pass
+
+    return 'not available'
 
 def getMinimumClock():
     global CPUFREQ_DIR
@@ -487,6 +483,14 @@ def getAmdPState():
             prefcore = file.read().strip()
 
     return status, prefcore
+
+def getBogoMips():
+    values = grep(readFile('/proc/cpuinfo'), 'bogomips', ignoreCase=True)
+    try:
+        return sum(float(v.split(':')[1].strip()) for v in values) / len(values)
+
+    except:
+        return None
 
 def makeListStructure(stat):
     for index, line in enumerate(stat):
@@ -528,11 +532,14 @@ def getParameterUsage(beforeStat, afterStat):
 
     return usage
 
-def cpuUsage():
-    beforeStat = terminal('grep cpu -i /proc/stat | awk \'{ $1="" ; print }\'').strip().split('\n')
-    time.sleep(0.25)
-    afterStat = terminal('grep cpu -i /proc/stat | awk \'{ $1="" ; print }\'').strip().split('\n')
+def getUsageStats():
+    lines = grep(readFile('/proc/stat'), 'cpu', ignoreCase=True)
+    return [str(line).replace('cpu', '').strip() for line in lines]
 
+def cpuUsage():
+    beforeStat = getUsageStats()
+    time.sleep(0.25)
+    afterStat = getUsageStats()
     try:
         beforeStat = makeListStructure(beforeStat)
         afterStat = makeListStructure(afterStat)
@@ -708,6 +715,8 @@ def dictFormat():
     dict['thread count'] = int(getThreadCount())
 
     dict['clock boost'] = getClockBoost()
+    dict['bogomips'] = getBogoMips()
+
     dict['minimum frequency'] = int(float(getMinimumClock()) * 1000)
     dict['maximum frequency'] = int(float(getMaximumClock()) * 1000)
 

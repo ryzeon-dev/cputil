@@ -6,7 +6,7 @@ import conf
 import yaml
 import sys
 
-VERSION = '5.4.0'
+VERSION = '5.5.0'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -125,6 +125,9 @@ if __name__ == '__main__':
         except:
             pass
 
+        if (bogomips := getBogoMips()):
+            print(f'BogoMIPS:\t\t{bogomips}')
+
         amdPStateStatus, amdPStatePrefcore = getAmdPState()
 
         if amdPStateStatus is not None:
@@ -186,7 +189,7 @@ if __name__ == '__main__':
             usages = cpuUsage()
             averageFrequency, frequencies = cpuFrequency()
 
-        except:
+        except KeyboardInterrupt:
             sys.exit(0)
 
         if argParser.cpu:
