@@ -13,6 +13,7 @@ class ArgParse:
         self.load = False
         self.loadFileName = None
         self.info = False
+        self.topology = False
         self.usage = False
         self.json = False
         self.yaml = False
@@ -20,7 +21,6 @@ class ArgParse:
         self.version = False
         self.cpu = None
         self.avg = False
-        self.general = False
         self.noArg = False
 
     def parse(self, args):
@@ -154,6 +154,9 @@ class ArgParse:
             elif arg == 'usage':
                 self.usage = True
 
+            elif arg == 'topology':
+                self.topology = True
+
             elif arg == 'json':
                 self.json = True
 
@@ -174,9 +177,6 @@ class ArgParse:
                     sys.exit(1)
 
                 self.cpu = args[index]
-
-            elif arg == '-g':
-                self.general = True
 
             elif arg == '-avg':
                 self.avg = True

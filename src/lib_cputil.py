@@ -4,8 +4,8 @@ import time
 import platform
 from subprocess import getstatusoutput
 import string
-from conf import confFilePath, editConf
 import re
+from conf import confFilePath, editConf
 
 ### UTILS ###
 
@@ -492,6 +492,17 @@ def getBogoMips():
     except:
         return None
 
+def getVirtualizationEnabled():
+    return True if grep(readFile('/proc/cpuinfo'), 'svm', True) or grep(readFile('/proc/cpuinfo'), 'vmx', True) else False
+
+def getFlags():
+    flags = grep(readFile('/proc/cpuinfo'), 'flags', returnFirstMatch=True)
+
+    if flags and ':' in flags:
+        return flags.split(':')[1].strip()
+
+    return None
+
 def makeListStructure(stat):
     for index, line in enumerate(stat):
         splitted = line.split(' ')
@@ -816,3 +827,6 @@ def dictFormat():
                 }
 
     return dict
+
+if __name__ == '__main__':
+    print(getVirtualizationEnabled())

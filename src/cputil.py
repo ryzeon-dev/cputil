@@ -76,6 +76,7 @@ if __name__ == '__main__':
         print('                                             a filepath or the name of a file located in the templates')
         print('                                             directory at /etc/cputild/templates/ (root)')
         print('    info                                     Show CPU info')
+        print('    topology                                 Show CPU topology')
         print('    usage                                    Show CPU usage')
         print('    json                                     Output all available information in JSON format')
         print('    yaml                                     Output all available information in YAML format')
@@ -85,7 +86,6 @@ if __name__ == '__main__':
         print('    -cpu CPU                            Select which logical processor to affect with setting action')
         print('                                        Works only with "set governor", "set frequency minimum" ')
         print('                                        and "set frequency maximum"')
-        print('    -g                                  Show general info only, to be used with "info"')
         print('    -avg                                Show only average usage, to be used with "usage"')
 
     elif argParser.json:
@@ -96,48 +96,55 @@ if __name__ == '__main__':
 
     elif argParser.info:
         model = getModelName()
-        if model:
-            print(f'Model name:\t\t{model}')
+        prefixSize = 24
 
-        print(f'Architecture:\t\t{getArchitecture()}')
+        if model:
+            print(f'Model name:'.ljust(prefixSize) + model)
+
+        print(f'Architecture:'.ljust(prefixSize) + getArchitecture())
 
         byteOrder, firstBit = getByteOrder()
         if byteOrder:
-            print(f'Byte order:\t\t{byteOrder} (first bit is {firstBit})')
+            print(f'Byte order:'.ljust(prefixSize) + f'{byteOrder} (first bit is {firstBit})')
 
         coreCount = getCoreCount()
         if coreCount:
-            print(f'Cores count:\t\t{coreCount}')
+            print(f'Cores count:'.ljust(prefixSize) + f'{coreCount}')
 
         threadCount = getThreadCount()
         if threadCount:
-            print(f'Threads count:\t\t{threadCount}')
+            print(f'Threads count:'.ljust(prefixSize) + f'{threadCount}')
 
-        print(f'Clock boost:\t\t{getClockBoost()}')
+        print(f'Clock boost:'.ljust(prefixSize) + getClockBoost())
 
         try:
-            print(f'Minimum clock:\t\t{getMinimumClock()} GHz')
+            print(f'Minimum clock:'.ljust(prefixSize) + f'{getMinimumClock()} GHz')
         except:
             pass
 
         try:
-            print(f'Maximum clock:\t\t{getMaximumClock()} GHz')
+            print(f'Maximum clock:'.ljust(prefixSize) + f'{getMaximumClock()} GHz')
         except:
             pass
 
         if (bogomips := getBogoMips()):
-            print(f'BogoMIPS:\t\t{bogomips}')
+            print(f'BogoMIPS:'.ljust(prefixSize) + f'{bogomips}')
+
+        print(f'Virtualization:'.ljust(prefixSize) + ('not ' if not getVirtualizationEnabled() else '') + 'enabled')
 
         amdPStateStatus, amdPStatePrefcore = getAmdPState()
 
         if amdPStateStatus is not None:
-            print(f'AMD P-State status:\t{amdPStateStatus}')
+            print(f'AMD P-State status:'.ljust(prefixSize) + amdPStateStatus)
 
         if amdPStatePrefcore is not None:
-            print(f'AMD P-State prefcore:\t{amdPStatePrefcore}')
+            print(f'AMD P-State prefcore:'.ljust(prefixSize) + amdPStatePrefcore)
 
-        if argParser.general:
-            sys.exit(0)
+        if (flags := getFlags()):
+            print(f'Flags:'.ljust(prefixSize) + flags)
+
+    elif argParser.topology:
+        threadCount = getThreadCount()
 
         try:
             cache = cpuCache()
