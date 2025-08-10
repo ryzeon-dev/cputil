@@ -12,6 +12,7 @@ class ArgParse:
         self.min = False
         self.load = False
         self.loadFileName = None
+        self.scaling = False
         self.info = False
         self.topology = False
         self.usage = False
@@ -148,25 +149,28 @@ class ArgParse:
 
                 self.loadFileName = args[index]
 
-            elif arg == 'info':
+            elif arg == 'scaling' or arg == 's':
+                self.scaling = True
+
+            elif arg == 'info' or arg == 'i':
                 self.info = True
 
-            elif arg == 'usage':
+            elif arg == 'usage' or arg == 'u':
                 self.usage = True
 
-            elif arg == 'topology':
+            elif arg == 'topology' or arg == 't':
                 self.topology = True
 
-            elif arg == 'json':
+            elif arg == 'json' or arg == 'j':
                 self.json = True
 
-            elif arg == 'yaml':
+            elif arg == 'yaml' or arg == 'y':
                 self.yaml = True
 
-            elif arg == 'version':
+            elif arg == 'version' or arg == 'v':
                 self.version = True
 
-            elif arg == 'help':
+            elif arg == 'help' or arg == 'h':
                 self.help = True
 
             elif arg == '-cpu':

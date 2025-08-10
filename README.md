@@ -44,16 +44,52 @@ wget https://github.com/ryzeon-dev/cputil/releases/download/v5.4.0/cputil_v5.4.0
 
 # Usage
 ## Utility
-- running `cputil` with no arguments displays:
+- running `cputil` with no arguments corresponds to running `cputil info`
+
+### Scaling
+- running `cputil scaling` displays:
   - available scaling governors
   - available scaling frequencies
-  - available energy performance preferences 
-  - current configuration for each logical processor
+  - energy performance preference
+  - current scaling driver
+  - current scaling configuration
+
+### Info 
+- running `cputil info` displays:
+  - model name
+  - architecture
+  - byte order
+  - cores count
+  - threads count
+  - clock parameters
+
+### Topology
+- running `cputil topology` displays
+  - threads distribution
+  - cache distribution
+  - cores distribution
+
+### Usage
+- running `cputil usage` displays:
+  - both average and logical processor wise usage 
+- if the `-avg` flag is used, only average usage will be shown
+
+### Json
+- running `cputil json` displays all available information in json format
+
+### Yaml
+- running `cputil yaml` displays all available information in yaml format
+
+### Version
+- running `cputil version` displays cputil's verision
+
+### Help
+- run `cputil help` to get help
 
 ## Setting
 - setting requires root privilegies
 
-#### Governor
+#### Scaling Governor
 - governor setting can be done running `cputil set governor` (or its abbreviated form `cputil sg`) followed by the desired governor
 - the governor must be one of the system allowed ones, run `cputil` with no argument to inspect available ones 
 
@@ -84,37 +120,6 @@ wget https://github.com/ryzeon-dev/cputil/releases/download/v5.4.0/cputil_v5.4.0
 - to load a custom configuration
   - run `sudo cputil load conf_name` if the configuration file in saved into `/etc/cputild/templates`
   - or run `sudo cputil load /path/to/conf` if it's saved anywhere else
-
-### Inspecting 
-- the inspection of CPU properties is done using the `info` command
-- it will show information like:
-  - model name
-  - architecture
-  - byte order
-  - cores count
-  - threads count
-  - clock parameters
-
-- the inspection of CPU performance level is done using `cputil` without any flag
-
-- in order to view the processor's topology run `cputil topology`
-
-### Usage
-- cpu usage is monitored using `usage` verb
-  - both average and logical processor wise usage is shown
-  - if the `-avg` flag is used, only average usage will be shown
-
-### Json
-- the `json` command prints all the available information in json format
-
-### Yaml
-- the `yaml` command prints all the available information in yaml format
-
-### Version
-- using `version` command prints the current cputil's version
-
-### Help
-- use `help` to get help
 
 ## Daemon
 - useful to set CPU parameters as default

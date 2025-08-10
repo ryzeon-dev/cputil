@@ -6,7 +6,7 @@ import conf
 import yaml
 import sys
 
-VERSION = '5.5.0'
+VERSION = '6.0.0'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -16,49 +16,9 @@ if __name__ == '__main__':
     argParser.parse(args)
 
     if argParser.noArg:
-        print('Available governors:')
+        argParser.info = True
 
-        for governor in GOVERNORS:
-            print(f'\t{governor}')
-
-        if FREQUENCIES is not None:
-            print('\nAvailable scaling frequencies:')
-
-            for frequency in FREQUENCIES:
-                print(f'\t{frequency}')
-
-        if ENERGY_PERFORMANCE_PREFERENCES:
-            print('\nEnergy performance preferences:')
-
-            for preference in ENERGY_PERFORMANCE_PREFERENCES:
-                print(f'\t{preference}')
-
-        print("\nCurrent status:")
-
-        try:
-            freqs = getCurrentScalingFrequencies()
-
-        except:
-            freqs = {}
-
-        try:
-            energyPerformance = getCurrentEnergyPerformancePreferences()
-
-        except:
-            energyPerformance = {}
-
-        for policy, governor in getCurrentGovernors().items():
-            line = f'Processor {policy.replace("policy", "")}:\t{governor} governor'
-
-            if (policyFreqs := freqs.get(policy)) is not None:
-                line += f'    frequency max = {policyFreqs["max"]}, min = {policyFreqs["min"]}'
-
-            if (energyPreference := energyPerformance.get(policy)) is not None:
-                line += f'    energy preference = {energyPreference}'
-
-            print(line)
-
-    elif argParser.help:
+    if argParser.help:
         print(f'cputil: cpu utils CLI v{VERSION}')
         print('usage: cputil [COMMAND arg[OPTION]]')
         print('\nCommands:')
@@ -75,18 +35,65 @@ if __name__ == '__main__':
         print('    load CONF_FILE                           Loads template file configuration; CONF_FILE can either be')
         print('                                             a filepath or the name of a file located in the templates')
         print('                                             directory at /etc/cputild/templates/ (root)')
-        print('    info                                     Show CPU info')
-        print('    topology                                 Show CPU topology')
-        print('    usage                                    Show CPU usage')
-        print('    json                                     Output all available information in JSON format')
-        print('    yaml                                     Output all available information in YAML format')
-        print('    version                                  Show version')
-        print('    help                                     Show this message and exit')
+        print('    info     (i)                             Show CPU info (default)')
+        print('    scaling  (s)                             Show scaling settings')
+        print('    topology (t)                             Show CPU topology')
+        print('    usage    (u)                             Show CPU usage')
+        print('    json     (j)                             Output all available information in JSON format')
+        print('    yaml     (y)                             Output all available information in YAML format')
+        print('    version  (v)                             Show version')
+        print('    help     (h)                             Show this message and exit')
         print('\nOptions:')
         print('    -cpu CPU                            Select which logical processor to affect with setting action')
         print('                                        Works only with "set governor", "set frequency minimum" ')
         print('                                        and "set frequency maximum"')
         print('    -avg                                Show only average usage, to be used with "usage"')
+
+    elif argParser.scaling:
+        print('Available scaling governors:')
+
+        for governor in GOVERNORS:
+            print(f'\t{governor}')
+
+        if FREQUENCIES is not None:
+            print('\nAvailable scaling frequencies:')
+
+            for frequency in FREQUENCIES:
+                print(f'\t{frequency}')
+
+        if ENERGY_PERFORMANCE_PREFERENCES:
+            print('\nEnergy performance preferences:')
+
+            for preference in ENERGY_PERFORMANCE_PREFERENCES:
+                print(f'\t{preference}')
+
+        scalingDriver = getCurrentScalingDriver()
+        print(f'\nCurrent scaling driver: {scalingDriver}')
+
+        print("\nCurrent status:")
+
+        try:
+            freqs = getCurrentScalingFrequencies()
+
+        except:
+            freqs = {}
+
+        try:
+            energyPerformance = getCurrentEnergyPerformancePreferences()
+
+        except:
+            energyPerformance = {}
+
+        for policy, governor in getCurrentScalingGovernors().items():
+            line = f'Processor {policy.replace("policy", "")}:\t{governor} governor'
+
+            if (policyFreqs := freqs.get(policy)) is not None:
+                line += f'    frequency max = {policyFreqs["max"]}, min = {policyFreqs["min"]}'
+
+            if (energyPreference := energyPerformance.get(policy)) is not None:
+                line += f'    energy preference = {energyPreference}'
+
+            print(line)
 
     elif argParser.json:
         print(json.dumps(dictFormat()))
@@ -256,7 +263,7 @@ if __name__ == '__main__':
             if argParser.cpu:
                 cpu = int(argParser.cpu)
 
-            if not setGovernor(argParser.setGovernor, cpu):
+            if not setScalingGovernor(argParser.setGovernor, cpu):
                 print('Error setting governor')
                 sys.exit(1)
 
@@ -310,7 +317,7 @@ if __name__ == '__main__':
         governor, scalingMinFreq, scalingMaxFreq, energyPerformancePreference, _ = conf.parseConf(filePath)
 
         if governor and governor != "auto":
-            if not setGovernor(governor, True):
+            if not setScalingGovernor(governor, True):
                 print('Error setting governor')
                 sys.exit(1)
 

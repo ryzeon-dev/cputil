@@ -168,7 +168,7 @@ ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
 
 ### SETTERS ###
 
-def setGovernor(governor, cpu=True, updateConf=True):
+def setScalingGovernor(governor, cpu=True, updateConf=True):
     global GOVERNORS, CPUFREQ_DIR, POLICIES
 
     if governor not in GOVERNORS:
@@ -310,7 +310,7 @@ def setEnergyPerformancePreference(preference, cpu, updateConf=True):
 
 def maxAll():
     maxScalingFrequency = str(max(int(freq) for freq in FREQUENCIES))
-    setGovernor('performance', True)
+    setScalingGovernor('performance', True)
 
     setMinimumScalingFrequency(maxScalingFrequency, True)
     setMaximumScalingFrequency(maxScalingFrequency, True)
@@ -322,7 +322,7 @@ def minAll():
 
     for governor in ['powersave', 'schedutil']:
         if governor in GOVERNORS:
-            setGovernor(governor, True)
+            setScalingGovernor(governor, True)
             break
 
     setMinimumScalingFrequency(minScalingFrequency, True)
@@ -332,7 +332,19 @@ def minAll():
 
 ### CURRENT STATUS GETTERS ###
 
-def getCurrentGovernors():
+def getCurrentScalingDriver():
+    drivers = set()
+
+    for policy in POLICIES:
+        path = os.path.join(CPUFREQ_DIR, policy)
+        driver = readFile(os.path.join(path, 'scaling_driver'))
+
+        if driver:
+            drivers.add(driver)
+
+    return ','.join(drivers)
+
+def getCurrentScalingGovernors():
     global CPUFREQ_DIR, POLICIES
 
     governors = {}
@@ -741,7 +753,7 @@ def dictFormat():
     dict['amd-p-state-prefcore'] = prefcore
 
     scalingFrequencies = getCurrentScalingFrequencies()
-    governors = getCurrentGovernors()
+    governors = getCurrentScalingGovernors()
 
     usages = cpuUsage()
     averageFrequency, frequencies = cpuFrequency()
@@ -829,4 +841,4 @@ def dictFormat():
     return dict
 
 if __name__ == '__main__':
-    print(getVirtualizationEnabled())
+    print(getCurrentScalingDriver())
