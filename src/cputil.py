@@ -6,7 +6,7 @@ import conf
 import yaml
 import sys
 
-VERSION = '6.0.0'
+VERSION = '6.0.1'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -135,7 +135,7 @@ if __name__ == '__main__':
             pass
 
         if (bogomips := getBogoMips()):
-            print(f'BogoMIPS:'.ljust(prefixSize) + f'{bogomips}')
+            print(f'BogoMIPS:'.ljust(prefixSize) + str(round(bogomips, 2)))
 
         print(f'Virtualization:'.ljust(prefixSize) + ('not ' if not getVirtualizationEnabled() else '') + 'enabled')
 
