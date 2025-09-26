@@ -6,7 +6,7 @@ import conf
 import yaml
 import sys
 
-VERSION = '6.1.0'
+VERSION = '6.1.1'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -50,6 +50,10 @@ if __name__ == '__main__':
         print('    -avg                                Show only average usage, to be used with "usage"')
 
     elif argParser.scaling:
+        global GLOBAL_VARIABLES_TO_INIT
+        if GLOBAL_VARIABLES_TO_INIT:
+            initGlobalVariables()
+
         print('Available scaling governors:')
 
         for governor in GOVERNORS:
