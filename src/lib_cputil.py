@@ -159,18 +159,38 @@ except:
     print('Error: cannot access cpufreq\'s sysfs')
     exit(1)
 
-POLICIES = getPolicies()
+GLOBAL_VARIABLES_TO_INIT = True
+
 GENERAL_DRIVER = '/sys/devices/system/cpu/'
 
-FREQUENCIES = readScalingFrequencies()
-GOVERNORS = findAvailableGovernors()
-ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
+POLICIES = None
+FREQUENCIES = None
+GOVERNORS = None
+ENERGY_PERFORMANCE_PREFERENCES = None
+
+def initGlobalVariables():
+    global POLICIES, FREQUENCIES, GOVERNORS, ENERGY_PERFORMANCE_PREFERENCES, GLOBAL_VARIABLES_TO_INIT
+    try:
+        POLICIES = getPolicies()
+        FREQUENCIES = readScalingFrequencies()
+        GOVERNORS = findAvailableGovernors()
+        ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
+
+    except:
+        print('Error: cannot read scaling information')
+        sys.exit(1)
+
+    GLOBAL_VARIABLES_TO_INIT = False
+
 
 ### SETTERS ###
 
 def setScalingGovernor(governor, cpu=True, updateConf=True):
-    global GOVERNORS, CPUFREQ_DIR, POLICIES
-
+    global GOVERNORS, CPUFREQ_DIR, POLICIES, GLOBAL_VARIABLES_TO_INIT
+    
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+        
     if governor not in GOVERNORS:
         print(f'Error: `{governor}` is not an available governor')
         return False
@@ -200,7 +220,11 @@ def setScalingGovernor(governor, cpu=True, updateConf=True):
         return False
 
 def setMinimumScalingFrequency(frequency, cpu, updateConf=True):
-    global FREQUENCIES, CPUFREQ_DIR, POLICIES
+    global FREQUENCIES, CPUFREQ_DIR, POLICIES, GLOBAL_VARIABLES_TO_INIT
+    
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+        
     if FREQUENCIES is None:
         print(f'Error: cputil is unable to detect allowed scaling frequencies')
         return False
@@ -236,7 +260,10 @@ def setMinimumScalingFrequency(frequency, cpu, updateConf=True):
         return False
 
 def setMaximumScalingFrequency(frequency, cpu, updateConf=True):
-    global FREQUENCIES, POLICIES, CPUFREQ_DIR
+    global FREQUENCIES, POLICIES, CPUFREQ_DIR, GLOBAL_VARIABLES_TO_INIT
+    
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
 
     if FREQUENCIES is None:
         print(f'Error: cputil.py is unable to detect allowed scaling frequencies')
@@ -271,7 +298,10 @@ def setMaximumScalingFrequency(frequency, cpu, updateConf=True):
         return False
 
 def setEnergyPerformancePreference(preference, cpu, updateConf=True):
-    global ENERGY_PERFORMANCE_PREFERENCES
+    global ENERGY_PERFORMANCE_PREFERENCES, GLOBAL_VARIABLES_TO_INIT
+    
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
 
     # changing governor requires reaload of energy performance preferences
     ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
@@ -309,6 +339,10 @@ def setEnergyPerformancePreference(preference, cpu, updateConf=True):
         return False
 
 def maxAll():
+    global GLOBAL_VARIABLES_TO_INIT, FREQUENCIES
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+        
     maxScalingFrequency = str(max(int(freq) for freq in FREQUENCIES))
     setScalingGovernor('performance', True)
 
@@ -318,6 +352,10 @@ def maxAll():
     setEnergyPerformancePreference('performance', True)
 
 def minAll():
+    global GLOBAL_VARIABLES_TO_INIT, FREQUENCIES
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+        
     minScalingFrequency = str(min(int(freq) for freq in FREQUENCIES))
 
     for governor in ['powersave', 'schedutil']:
@@ -333,6 +371,11 @@ def minAll():
 ### CURRENT STATUS GETTERS ###
 
 def getCurrentScalingDriver():
+    global GLOBAL_VARIABLES_TO_INIT, POLICIES, CPUFREQ_DIR
+    
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+    
     drivers = set()
 
     for policy in POLICIES:
@@ -345,7 +388,10 @@ def getCurrentScalingDriver():
     return ','.join(drivers)
 
 def getCurrentScalingGovernors():
-    global CPUFREQ_DIR, POLICIES
+    global CPUFREQ_DIR, POLICIES, GLOBAL_VARIABLES_TO_INIT
+    
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
 
     governors = {}
     for policy in POLICIES:
@@ -354,7 +400,11 @@ def getCurrentScalingGovernors():
     return governors
 
 def getCurrentScalingFrequencies():
-    global CPUFREQ_DIR, POLICIES
+    global CPUFREQ_DIR, POLICIES, GLOBAL_VARIABLES_TO_INIT
+
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+
     frequencies = {}
 
     for policy in POLICIES:
@@ -372,7 +422,11 @@ def getCurrentScalingFrequencies():
     return frequencies
 
 def getCurrentEnergyPerformancePreferences():
-    global CPUFREQ_DIR, CPUFREQ_CONTENT
+    global CPUFREQ_DIR, CPUFREQ_CONTENT, GLOBAL_VARIABLES_TO_INIT
+
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+
     currentEnergyPreferences = {}
 
     for policy in CPUFREQ_CONTENT:
@@ -468,13 +522,21 @@ def getClockBoost():
     return 'not available'
 
 def getMinimumClock():
-    global CPUFREQ_DIR
+    global CPUFREQ_DIR, GLOBAL_VARIABLES_TO_INIT
+
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+
     return round(min(
         int(freq) for freq in terminal(f'cat {CPUFREQ_DIR}/policy*/cpuinfo_min_freq').strip().split('\n')
     ) / 1000000, 2)
 
 def getMaximumClock():
-    global CPUFREQ_DIR
+    global CPUFREQ_DIR, GLOBAL_VARIABLES_TO_INIT
+
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+
     return round(max(
         int(freq) for freq in terminal(f'cat {CPUFREQ_DIR}/policy*/cpuinfo_max_freq').strip().split('\n')
     ) / 1000000, 2)
@@ -728,6 +790,10 @@ def wrap(string):
     return '"' + string + '"'
 
 def dictFormat():
+    global GLOBAL_VARIABLES_TO_INIT
+    if GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+
     dict = {}
 
     dict["model name"] = getModelName()

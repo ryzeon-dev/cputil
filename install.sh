@@ -59,7 +59,7 @@ elif [ "$1" == "all" ]; then
     installDaemon
     installBin
     deactivate
-#    removeInstallFiles
+    removeInstallFiles
 
 else
     echo "usage: install.sh (daemon | bin | all)"

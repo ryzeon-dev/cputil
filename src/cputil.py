@@ -6,7 +6,7 @@ import conf
 import yaml
 import sys
 
-VERSION = '6.0.1'
+VERSION = '6.1.0'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
