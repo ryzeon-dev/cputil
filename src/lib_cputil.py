@@ -45,10 +45,10 @@ def terminal(cmd):
     return output
 
 def getPolicies():
-    global CPUFREQ_DIR
+    global _CPUFREQ_DIR
 
     try:
-        policies = grep(os.listdir(CPUFREQ_DIR), 'policy')
+        policies = grep(os.listdir(_CPUFREQ_DIR), 'policy')
     except:
         print('Error: cannot read cpufreq\'s sysfs')
         sys.exit(1)
@@ -63,10 +63,10 @@ def readFile(path):
     return content.strip()
 
 def writePolicyFile(policy, file, content):
-    global CPUFREQ_DIR
+    global _CPUFREQ_DIR
 
     try:
-        with open(os.path.join(CPUFREQ_DIR, policy, file), 'w') as file:
+        with open(os.path.join(_CPUFREQ_DIR, policy, file), 'w') as file:
             file.write(content)
 
     except:
@@ -78,17 +78,17 @@ def writePolicyFile(policy, file, content):
 ### SYSFS CONST READER ###
 
 def readScalingFrequencies():
-    global CPUFREQ_CONTENT, CPUFREQ_DIR
+    global _CPUFREQ_CONTENT, _CPUFREQ_DIR
 
     frequencies = set()
     frequencyFiles = ['scaling_max_freq', 'scaling_min_freq', 'scaling_available_frequencies',
                       'amd_pstate_lowest_nonlinear_freq', 'amd_pstate_max_freq', 'cpuinfo_max_freq', 'cpuinfo_min_freq']
 
-    for e in CPUFREQ_CONTENT:
+    for e in _CPUFREQ_CONTENT:
         if not re.fullmatch('^policy[0-9]{1,3}$', e):
             continue
 
-        policyPath = os.path.join(CPUFREQ_DIR, e)
+        policyPath = os.path.join(_CPUFREQ_DIR, e)
 
         for file in frequencyFiles:
             filePath = os.path.join(policyPath, file)
@@ -104,16 +104,16 @@ def readScalingFrequencies():
     return frequencies
 
 def findAvailableGovernors():
-    global CPUFREQ_CONTENT, CPUFREQ_DIR
+    global _CPUFREQ_CONTENT, _CPUFREQ_DIR
 
     governors = set()
     governorFiles = ['scaling_available_governors']
 
-    for e in CPUFREQ_CONTENT:
+    for e in _CPUFREQ_CONTENT:
         if not re.fullmatch('^policy[0-9]{1,3}$', e):
             continue
 
-        policyPath = os.path.join(CPUFREQ_DIR, e)
+        policyPath = os.path.join(_CPUFREQ_DIR, e)
 
         for file in governorFiles:
             filePath = os.path.join(policyPath, file)
@@ -127,17 +127,17 @@ def findAvailableGovernors():
     return list(governors)
 
 def getEnergyPerformancePreferences():
-    global CPUFREQ_CONTENT, CPUFREQ_DIR
+    global _CPUFREQ_CONTENT, _CPUFREQ_DIR
 
     preferences = set()
     preferenceFiles = ['energy_performance_available_preferences', 'energy_performance_preference']
 
-    for policy in CPUFREQ_CONTENT:
+    for policy in _CPUFREQ_CONTENT:
         if not re.fullmatch('^policy[0-9]{1,3}$', policy):
             continue
 
         for preferenceFile in preferenceFiles:
-            filePath = os.path.join(CPUFREQ_DIR, policy, preferenceFile)
+            filePath = os.path.join(_CPUFREQ_DIR, policy, preferenceFile)
 
             if not os.path.exists(filePath):
                 continue
@@ -150,55 +150,83 @@ def getEnergyPerformancePreferences():
 
 ### CONST ###
 
-CPUFREQ_DIR = '/sys/devices/system/cpu/cpufreq'
+_CPUFREQ_DIR = '/sys/devices/system/cpu/cpufreq'
 
 try:
-    CPUFREQ_CONTENT = os.listdir(CPUFREQ_DIR)
+    _CPUFREQ_CONTENT = os.listdir(_CPUFREQ_DIR)
 
 except:
     print('Error: cannot access cpufreq\'s sysfs')
     exit(1)
 
-GLOBAL_VARIABLES_TO_INIT = True
+_GLOBAL_VARIABLES_TO_INIT = True
 
-GENERAL_DRIVER = '/sys/devices/system/cpu/'
+_GENERAL_DRIVER = '/sys/devices/system/cpu/'
 
-POLICIES = None
-FREQUENCIES = None
-GOVERNORS = None
-ENERGY_PERFORMANCE_PREFERENCES = None
+_POLICIES = None
+_FREQUENCIES = None
+_GOVERNORS = None
+_ENERGY_PERFORMANCE_PREFERENCES = None
 
 def initGlobalVariables():
-    global POLICIES, FREQUENCIES, GOVERNORS, ENERGY_PERFORMANCE_PREFERENCES, GLOBAL_VARIABLES_TO_INIT
+    global _POLICIES, _FREQUENCIES, _GOVERNORS, _ENERGY_PERFORMANCE_PREFERENCES, _GLOBAL_VARIABLES_TO_INIT
     try:
-        POLICIES = getPolicies()
-        FREQUENCIES = readScalingFrequencies()
-        GOVERNORS = findAvailableGovernors()
-        ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
+        _POLICIES = getPolicies()
+        _FREQUENCIES = readScalingFrequencies()
+        _GOVERNORS = findAvailableGovernors()
+        _ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
 
     except:
         print('Error: cannot read scaling information')
         sys.exit(1)
 
-    GLOBAL_VARIABLES_TO_INIT = False
+    _GLOBAL_VARIABLES_TO_INIT = False
 
+### CONST GETTERS ###
+
+def getAllPolicies():
+    if _GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+
+    return _POLICIES
+
+
+def getAllGovernors():
+    if _GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+
+    return _GOVERNORS
+
+
+def getAllFrequencies():
+    if _GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+
+    return _FREQUENCIES
+
+
+def getAllEnergyPerformancePreferences():
+    if _GLOBAL_VARIABLES_TO_INIT:
+        initGlobalVariables()
+
+    return _ENERGY_PERFORMANCE_PREFERENCES
 
 ### SETTERS ###
 
 def setScalingGovernor(governor, cpu=True, updateConf=True):
-    global GOVERNORS, CPUFREQ_DIR, POLICIES, GLOBAL_VARIABLES_TO_INIT
+    global _GOVERNORS, _CPUFREQ_DIR, _POLICIES, _GLOBAL_VARIABLES_TO_INIT
     
-    if GLOBAL_VARIABLES_TO_INIT:
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
         
-    if governor not in GOVERNORS:
+    if governor not in _GOVERNORS:
         print(f'Error: `{governor}` is not an available governor')
         return False
 
     if cpu is True:
         print('Setting governor for all processors to ' + governor)
 
-        for policy in POLICIES:
+        for policy in _POLICIES:
             if not writePolicyFile(policy, 'scaling_governor', governor):
                 return False
 
@@ -210,7 +238,7 @@ def setScalingGovernor(governor, cpu=True, updateConf=True):
     else:
         policy = f'policy{cpu}'
 
-        if policy in POLICIES:
+        if policy in _POLICIES:
             print('Setting governor for processor ' + str(cpu) + ' to ' + governor)
 
             if not writePolicyFile(policy, 'scaling_governor', governor):
@@ -220,23 +248,23 @@ def setScalingGovernor(governor, cpu=True, updateConf=True):
         return False
 
 def setMinimumScalingFrequency(frequency, cpu, updateConf=True):
-    global FREQUENCIES, CPUFREQ_DIR, POLICIES, GLOBAL_VARIABLES_TO_INIT
+    global _FREQUENCIES, _CPUFREQ_DIR, _POLICIES, _GLOBAL_VARIABLES_TO_INIT
     
-    if GLOBAL_VARIABLES_TO_INIT:
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
         
-    if FREQUENCIES is None:
+    if _FREQUENCIES is None:
         print(f'Error: cputil is unable to detect allowed scaling frequencies')
         return False
 
-    if frequency not in FREQUENCIES:
+    if frequency not in _FREQUENCIES:
         print(f'Error: `{frequency}` is not one of the allowed scaling frequencies')
         return False
 
     if cpu is True:
         print('Setting for all processors minimum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
 
-        for policy in POLICIES:
+        for policy in _POLICIES:
             if not writePolicyFile(policy, 'scaling_min_freq', frequency):
                 return False
 
@@ -248,7 +276,7 @@ def setMinimumScalingFrequency(frequency, cpu, updateConf=True):
     else:
         policy = f'policy{cpu}'
 
-        if policy in POLICIES:
+        if policy in _POLICIES:
             print('Setting for processor ' + str(cpu) + ' minimum frequency to ' + str(
                 round(int(frequency) / 1000000, 1)) + ' GHz')
 
@@ -260,23 +288,23 @@ def setMinimumScalingFrequency(frequency, cpu, updateConf=True):
         return False
 
 def setMaximumScalingFrequency(frequency, cpu, updateConf=True):
-    global FREQUENCIES, POLICIES, CPUFREQ_DIR, GLOBAL_VARIABLES_TO_INIT
+    global _FREQUENCIES, _POLICIES, _CPUFREQ_DIR, _GLOBAL_VARIABLES_TO_INIT
     
-    if GLOBAL_VARIABLES_TO_INIT:
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
 
-    if FREQUENCIES is None:
+    if _FREQUENCIES is None:
         print(f'Error: cputil.py is unable to detect allowed scaling frequencies')
         return False
 
-    if frequency not in FREQUENCIES:
+    if frequency not in _FREQUENCIES:
         print(f'Error: `{frequency}` is not one of the allowed scaling frequencies')
         return False
 
     if cpu is True:
         print('Setting for all processors maximum frequency to ' + str(round(int(frequency) / 1000000, 1)) + ' GHz')
 
-        for policy in POLICIES:
+        for policy in _POLICIES:
             if not writePolicyFile(policy, 'scaling_max_freq', frequency):
                 return False
 
@@ -288,7 +316,7 @@ def setMaximumScalingFrequency(frequency, cpu, updateConf=True):
     else:
         policy = f'policy{cpu}'
 
-        if policy in POLICIES:
+        if policy in _POLICIES:
             print('Setting for processor ' + str(cpu) + ' maximum frequency to ' + str(
                 round(int(frequency) / 1000000, 1)) + ' GHz')
 
@@ -298,26 +326,26 @@ def setMaximumScalingFrequency(frequency, cpu, updateConf=True):
         return False
 
 def setEnergyPerformancePreference(preference, cpu, updateConf=True):
-    global ENERGY_PERFORMANCE_PREFERENCES, GLOBAL_VARIABLES_TO_INIT
+    global _ENERGY_PERFORMANCE_PREFERENCES, _GLOBAL_VARIABLES_TO_INIT
     
-    if GLOBAL_VARIABLES_TO_INIT:
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
 
     # changing governor requires reaload of energy performance preferences
-    ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
+    _ENERGY_PERFORMANCE_PREFERENCES = getEnergyPerformancePreferences()
 
-    if ENERGY_PERFORMANCE_PREFERENCES is None:
+    if _ENERGY_PERFORMANCE_PREFERENCES is None:
         print(f'Error: cputil is unable to detect allowed energy performance preferences')
         return False
 
-    if preference not in ENERGY_PERFORMANCE_PREFERENCES:
+    if preference not in _ENERGY_PERFORMANCE_PREFERENCES:
         print(f'Error: `{preference}` is not one of the allowed energy performance preferences')
         return False
 
     if cpu is True:
         print('Setting for all processors energy performance preference to ' + preference)
 
-        for policy in POLICIES:
+        for policy in _POLICIES:
             if not writePolicyFile(policy, 'energy_performance_preference', preference):
                 return False
 
@@ -329,7 +357,7 @@ def setEnergyPerformancePreference(preference, cpu, updateConf=True):
     else:
         policy = f'policy{cpu}'
 
-        if policy in POLICIES:
+        if policy in _POLICIES:
             print('Setting for processor ' + str(cpu) + ' energy performance preference to ' + preference)
 
             if not writePolicyFile(policy, 'energy_performance_preference', preference):
@@ -339,11 +367,11 @@ def setEnergyPerformancePreference(preference, cpu, updateConf=True):
         return False
 
 def maxAll():
-    global GLOBAL_VARIABLES_TO_INIT, FREQUENCIES
-    if GLOBAL_VARIABLES_TO_INIT:
+    global _GLOBAL_VARIABLES_TO_INIT, _FREQUENCIES
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
         
-    maxScalingFrequency = str(max(int(freq) for freq in FREQUENCIES))
+    maxScalingFrequency = str(max(int(freq) for freq in _FREQUENCIES))
     setScalingGovernor('performance', True)
 
     setMinimumScalingFrequency(maxScalingFrequency, True)
@@ -352,14 +380,14 @@ def maxAll():
     setEnergyPerformancePreference('performance', True)
 
 def minAll():
-    global GLOBAL_VARIABLES_TO_INIT, FREQUENCIES
-    if GLOBAL_VARIABLES_TO_INIT:
+    global _GLOBAL_VARIABLES_TO_INIT, _FREQUENCIES
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
         
-    minScalingFrequency = str(min(int(freq) for freq in FREQUENCIES))
+    minScalingFrequency = str(min(int(freq) for freq in _FREQUENCIES))
 
     for governor in ['powersave', 'schedutil']:
-        if governor in GOVERNORS:
+        if governor in _GOVERNORS:
             setScalingGovernor(governor, True)
             break
 
@@ -371,15 +399,15 @@ def minAll():
 ### CURRENT STATUS GETTERS ###
 
 def getCurrentScalingDriver():
-    global GLOBAL_VARIABLES_TO_INIT, POLICIES, CPUFREQ_DIR
+    global _GLOBAL_VARIABLES_TO_INIT, _POLICIES, _CPUFREQ_DIR
     
-    if GLOBAL_VARIABLES_TO_INIT:
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
     
     drivers = set()
 
-    for policy in POLICIES:
-        path = os.path.join(CPUFREQ_DIR, policy)
+    for policy in _POLICIES:
+        path = os.path.join(_CPUFREQ_DIR, policy)
         driver = readFile(os.path.join(path, 'scaling_driver'))
 
         if driver:
@@ -388,32 +416,32 @@ def getCurrentScalingDriver():
     return ','.join(drivers)
 
 def getCurrentScalingGovernors():
-    global CPUFREQ_DIR, POLICIES, GLOBAL_VARIABLES_TO_INIT
+    global _CPUFREQ_DIR, _POLICIES, _GLOBAL_VARIABLES_TO_INIT
     
-    if GLOBAL_VARIABLES_TO_INIT:
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
 
     governors = {}
-    for policy in POLICIES:
-        governors[policy] = readFile(f'{CPUFREQ_DIR}/{policy}/scaling_governor').strip()
+    for policy in _POLICIES:
+        governors[policy] = readFile(f'{_CPUFREQ_DIR}/{policy}/scaling_governor').strip()
 
     return governors
 
 def getCurrentScalingFrequencies():
-    global CPUFREQ_DIR, POLICIES, GLOBAL_VARIABLES_TO_INIT
+    global _CPUFREQ_DIR, _POLICIES, _GLOBAL_VARIABLES_TO_INIT
 
-    if GLOBAL_VARIABLES_TO_INIT:
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
 
     frequencies = {}
 
-    for policy in POLICIES:
+    for policy in _POLICIES:
         try:
             frequencies[policy] = {
-                'min': readFile(f'{CPUFREQ_DIR}/{policy}/scaling_min_freq').strip() if 'scaling_min_freq' in os.listdir(
-                    f'{CPUFREQ_DIR}/{policy}') else '',
-                'max': readFile(f'{CPUFREQ_DIR}/{policy}/scaling_max_freq').strip() if 'scaling_max_freq' in os.listdir(
-                    f'{CPUFREQ_DIR}/{policy}') else ''
+                'min': readFile(f'{_CPUFREQ_DIR}/{policy}/scaling_min_freq').strip() if 'scaling_min_freq' in os.listdir(
+                    f'{_CPUFREQ_DIR}/{policy}') else '',
+                'max': readFile(f'{_CPUFREQ_DIR}/{policy}/scaling_max_freq').strip() if 'scaling_max_freq' in os.listdir(
+                    f'{_CPUFREQ_DIR}/{policy}') else ''
             }
         except:
             print('Error: cannot read cpufreq\'s sysfs')
@@ -422,18 +450,18 @@ def getCurrentScalingFrequencies():
     return frequencies
 
 def getCurrentEnergyPerformancePreferences():
-    global CPUFREQ_DIR, CPUFREQ_CONTENT, GLOBAL_VARIABLES_TO_INIT
+    global _CPUFREQ_DIR, _CPUFREQ_CONTENT, _GLOBAL_VARIABLES_TO_INIT
 
-    if GLOBAL_VARIABLES_TO_INIT:
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
 
     currentEnergyPreferences = {}
 
-    for policy in CPUFREQ_CONTENT:
+    for policy in _CPUFREQ_CONTENT:
         if not re.fullmatch('^policy[0-9]{1,3}$', policy):
             continue
 
-        filePath = os.path.join(CPUFREQ_DIR, policy, 'energy_performance_preference')
+        filePath = os.path.join(_CPUFREQ_DIR, policy, 'energy_performance_preference')
         if os.path.exists(filePath):
             with open(filePath, 'r') as file:
                 currentEnergyPreferences[policy] = file.read().strip()
@@ -491,14 +519,14 @@ def getArchitecture():
     return f'{arch} ({busSize})'
 
 def getCoreCount():
-    global GENERAL_DRIVER
+    global _GENERAL_DRIVER
     coreIds = set()
 
-    for cpu in os.listdir(GENERAL_DRIVER):
+    for cpu in os.listdir(_GENERAL_DRIVER):
         if not re.fullmatch('^cpu[0-9]{1,3}$', cpu):
             continue
 
-        coreId = readFile(f'{GENERAL_DRIVER}/{cpu}/topology/core_id').strip()
+        coreId = readFile(f'{_GENERAL_DRIVER}/{cpu}/topology/core_id').strip()
 
         if coreId:
             coreIds.add(coreId)
@@ -509,11 +537,11 @@ def getThreadCount():
     return threads if (threads := grep(readFile('/proc/cpuinfo'), 'processor', count=True)) else None
 
 def getClockBoost():
-    global CPUFREQ_DIR
+    global _CPUFREQ_DIR
 
     try:
-        if 'boost' in os.listdir(CPUFREQ_DIR):
-            with open(f'{CPUFREQ_DIR}/boost', 'r') as file:
+        if 'boost' in os.listdir(_CPUFREQ_DIR):
+            with open(f'{_CPUFREQ_DIR}/boost', 'r') as file:
                 return 'active' if '1' in file.read() else 'not active'
 
     except:
@@ -522,29 +550,29 @@ def getClockBoost():
     return 'not available'
 
 def getMinimumClock():
-    global CPUFREQ_DIR, GLOBAL_VARIABLES_TO_INIT
+    global _CPUFREQ_DIR, _GLOBAL_VARIABLES_TO_INIT
 
-    if GLOBAL_VARIABLES_TO_INIT:
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
 
     return round(min(
-        int(freq) for freq in terminal(f'cat {CPUFREQ_DIR}/policy*/cpuinfo_min_freq').strip().split('\n')
+        int(freq) for freq in terminal(f'cat {_CPUFREQ_DIR}/policy*/cpuinfo_min_freq').strip().split('\n')
     ) / 1000000, 2)
 
 def getMaximumClock():
-    global CPUFREQ_DIR, GLOBAL_VARIABLES_TO_INIT
+    global _CPUFREQ_DIR, _GLOBAL_VARIABLES_TO_INIT
 
-    if GLOBAL_VARIABLES_TO_INIT:
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
 
     return round(max(
-        int(freq) for freq in terminal(f'cat {CPUFREQ_DIR}/policy*/cpuinfo_max_freq').strip().split('\n')
+        int(freq) for freq in terminal(f'cat {_CPUFREQ_DIR}/policy*/cpuinfo_max_freq').strip().split('\n')
     ) / 1000000, 2)
 
 def getAmdPState():
-    global GENERAL_DRIVER
+    global _GENERAL_DRIVER
 
-    pStateDir = os.path.join(GENERAL_DRIVER, 'amd_pstate')
+    pStateDir = os.path.join(_GENERAL_DRIVER, 'amd_pstate')
     status = None
     prefcore = None
 
@@ -638,7 +666,7 @@ def cpuUsage():
     return usages
 
 def cpuFrequency():
-    global CPUFREQ_DIR
+    global _CPUFREQ_DIR
     lines = grep(readFile('/proc/cpuinfo'), 'cpu MHz')
     frequencies = []
 
@@ -649,9 +677,9 @@ def cpuFrequency():
     if not frequencies or frequencies == ['']:
         frequencies = []
 
-        for policy in POLICIES:
+        for policy in _POLICIES:
             try:
-                freq = readFile(f'{CPUFREQ_DIR}/{policy}/cpuinfo_cur_freq')
+                freq = readFile(f'{_CPUFREQ_DIR}/{policy}/cpuinfo_cur_freq')
 
             except:
                 frequencies.append(0)
@@ -680,16 +708,16 @@ def cpuFrequency():
         return average, frequencies
 
 def threadDistribution():
-    global GENERAL_DRIVER
+    global _GENERAL_DRIVER
     processors = {}
 
-    for dir in os.listdir(GENERAL_DRIVER):
+    for dir in os.listdir(_GENERAL_DRIVER):
         if dir.replace('cpu', '') and dir.replace('cpu', '')[0] not in string.ascii_letters:
 
-            if 'topology' not in os.listdir(os.path.join(GENERAL_DRIVER, dir)) or \
-                    'core_id' not in os.listdir(os.path.join(GENERAL_DRIVER, dir, 'topology')):
+            if 'topology' not in os.listdir(os.path.join(_GENERAL_DRIVER, dir)) or \
+                    'core_id' not in os.listdir(os.path.join(_GENERAL_DRIVER, dir, 'topology')):
                 return []
-            processors[dir] = readFile(os.path.join(GENERAL_DRIVER, dir, 'topology', 'core_id')).strip()
+            processors[dir] = readFile(os.path.join(_GENERAL_DRIVER, dir, 'topology', 'core_id')).strip()
 
     res = []
     for processor in processorSort(processors.keys()):
@@ -698,17 +726,17 @@ def threadDistribution():
     return res
 
 def processorDieDistribution():
-    global GENERAL_DRIVER
+    global _GENERAL_DRIVER
     processors = {}
 
-    for dir in os.listdir(GENERAL_DRIVER):
+    for dir in os.listdir(_GENERAL_DRIVER):
         if dir.replace('cpu', '') and dir.replace('cpu', '')[0] not in string.ascii_letters:
 
-            if 'topology' not in os.listdir(os.path.join(GENERAL_DRIVER, dir)) or \
-                    'die_id' not in os.listdir(os.path.join(GENERAL_DRIVER, dir, 'topology')):
+            if 'topology' not in os.listdir(os.path.join(_GENERAL_DRIVER, dir)) or \
+                    'die_id' not in os.listdir(os.path.join(_GENERAL_DRIVER, dir, 'topology')):
                 return None
 
-            with open(os.path.join(GENERAL_DRIVER, dir, 'topology', 'die_id'), 'r') as file:
+            with open(os.path.join(_GENERAL_DRIVER, dir, 'topology', 'die_id'), 'r') as file:
                 processors[dir] = file.read().strip()
 
     res = []
@@ -718,9 +746,9 @@ def processorDieDistribution():
     return res
 
 def cpuCache():
-    global GENERAL_DRIVER
+    global _GENERAL_DRIVER
 
-    cpuDirs = grep(os.listdir(GENERAL_DRIVER), 'cpu', ignoreCase=True)  # terminal('ls /sys/devices/system/cpu | grep -i cpu').split('\n')
+    cpuDirs = grep(os.listdir(_GENERAL_DRIVER), 'cpu', ignoreCase=True)  # terminal('ls /sys/devices/system/cpu | grep -i cpu').split('\n')
 
     if 'cpufreq' in cpuDirs:
         cpuDirs.remove('cpufreq')
@@ -732,14 +760,14 @@ def cpuCache():
     for cpu in cpuDirs:
         cpuCache[cpu] = {}
 
-        for cacheIndex in grep(os.listdir(f'{GENERAL_DRIVER}/{cpu}/cache'), 'index', ignoreCase=True):
+        for cacheIndex in grep(os.listdir(f'{_GENERAL_DRIVER}/{cpu}/cache'), 'index', ignoreCase=True):
             try:
-                size = readFile(f'{GENERAL_DRIVER}/{cpu}/cache/{cacheIndex}/size').strip()
+                size = readFile(f'{_GENERAL_DRIVER}/{cpu}/cache/{cacheIndex}/size').strip()
             except:
                 size = 'unknown'
 
-            level = readFile(f'{GENERAL_DRIVER}/{cpu}/cache/{cacheIndex}/level')
-            sharing = readFile(f'{GENERAL_DRIVER}/{cpu}/cache/{cacheIndex}/shared_cpu_list')
+            level = readFile(f'{_GENERAL_DRIVER}/{cpu}/cache/{cacheIndex}/level')
+            sharing = readFile(f'{_GENERAL_DRIVER}/{cpu}/cache/{cacheIndex}/shared_cpu_list')
 
             if cpuCache[cpu].get(level) is not None and size != 'unknown':
                 cpuCache[cpu][level]['amount'] += int(size.replace('K', '').replace('k', ''))
@@ -790,8 +818,8 @@ def wrap(string):
     return '"' + string + '"'
 
 def dictFormat():
-    global GLOBAL_VARIABLES_TO_INIT
-    if GLOBAL_VARIABLES_TO_INIT:
+    global _GLOBAL_VARIABLES_TO_INIT
+    if _GLOBAL_VARIABLES_TO_INIT:
         initGlobalVariables()
 
     dict = {}
@@ -809,9 +837,9 @@ def dictFormat():
     dict['minimum frequency'] = int(float(getMinimumClock()) * 1000)
     dict['maximum frequency'] = int(float(getMaximumClock()) * 1000)
 
-    dict['governors'] = [governor for governor in GOVERNORS]
-    dict['scaling frequencies'] = [int(frequency) for frequency in FREQUENCIES]
-    dict['energy performance preferences'] = [epp for epp in ENERGY_PERFORMANCE_PREFERENCES]
+    dict['governors'] = [governor for governor in _GOVERNORS]
+    dict['scaling frequencies'] = [int(frequency) for frequency in _FREQUENCIES]
+    dict['energy performance preferences'] = [epp for epp in _ENERGY_PERFORMANCE_PREFERENCES]
 
     status, prefcore = getAmdPState()
 

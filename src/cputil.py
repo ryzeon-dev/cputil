@@ -6,7 +6,7 @@ import conf
 import yaml
 import sys
 
-VERSION = '6.1.1'
+VERSION = '6.1.2'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -50,25 +50,21 @@ if __name__ == '__main__':
         print('    -avg                                Show only average usage, to be used with "usage"')
 
     elif argParser.scaling:
-        global GLOBAL_VARIABLES_TO_INIT
-        if GLOBAL_VARIABLES_TO_INIT:
-            initGlobalVariables()
-
         print('Available scaling governors:')
 
-        for governor in GOVERNORS:
+        for governor in getAllGovernors():
             print(f'\t{governor}')
 
-        if FREQUENCIES is not None:
+        if getAllFrequencies() is not None:
             print('\nAvailable scaling frequencies:')
 
-            for frequency in FREQUENCIES:
+            for frequency in getAllFrequencies():
                 print(f'\t{frequency}')
 
-        if ENERGY_PERFORMANCE_PREFERENCES:
+        if getAllEnergyPerformancePreferences():
             print('\nEnergy performance preferences:')
 
-            for preference in ENERGY_PERFORMANCE_PREFERENCES:
+            for preference in getAllEnergyPerformancePreferences():
                 print(f'\t{preference}')
 
         scalingDriver = getCurrentScalingDriver()
