@@ -6,7 +6,7 @@ import conf
 import yaml
 import sys
 
-VERSION = '6.1.3'
+VERSION = '6.1.4'
 
 if __name__ == '__main__':
     args = sys.argv[1:]
@@ -215,7 +215,7 @@ if __name__ == '__main__':
 
             print(f'Processor: {cpuIndex}')
             for label, percent in usage.items():
-                print(f'    {(label + ':').ljust(20)}{percent} %')
+                print(f'    {(label + ":").ljust(20)}{percent} %')
 
             if frequencies:
                 print(f'    Frequency:\t\t{frequency} MHz')
@@ -224,7 +224,7 @@ if __name__ == '__main__':
             print('Average:')
 
             for label, percent in usages[0].items():
-                print(f'    {(label + ':').ljust(20)}{percent} %')
+                print(f'    {(label + ":").ljust(20)}{percent} %')
 
             if averageFrequency:
                 print(f'    Frequency:\t\t{averageFrequency} MHz')
@@ -234,7 +234,7 @@ if __name__ == '__main__':
                     print(f'\nProcessor: {policy}')
 
                     for label, percent in thread.items():
-                        print(f'    {(label + ':').ljust(20)}{percent} %')
+                        print(f'    {(label + ":").ljust(20)}{percent} %')
 
                     if frequencies and policy < len(frequencies):
                         print(f'    Frequency: \t\t{frequencies[policy]} MHz')
