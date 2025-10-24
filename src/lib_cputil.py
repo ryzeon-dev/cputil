@@ -609,11 +609,11 @@ def makeListStructure(stat):
     for index, line in enumerate(stat):
         splitted = line.split(' ')
 
-        for element in splitted:
-            if element == '' or element == ' ':
-                splitted.remove(element)
+        while '' in splitted:
+            splitted.remove('')
 
         stat[index] = list(int(element) for element in splitted)
+
     return stat
 
 usageContexts = [
@@ -627,37 +627,47 @@ usageContexts = [
 ]
 
 def getParameterUsage(beforeStat, afterStat):
-    usage = {}
-    beforeSum = sum(beforeStat)
-    afterSum = sum(afterStat)
+    usage = {'total': 0}
 
-    beforeIdle = beforeStat[3]
-    afterIdle = afterStat[3]
+    deltas = [
+        beforeStat[i] - afterStat[i] for i in range(len(beforeStat))
+    ]
+    total = sum(deltas)
 
-    total = afterSum - beforeSum
-    totalUsagePercent = (total - (afterIdle - beforeIdle)) * 100 / total
-    usage['total'] = round(totalUsagePercent, 2)
+    for index, param in enumerate(deltas):
+        usage[usageContexts[index]] = abs(round(param * 100 / total, 2))
 
-    for index, label in enumerate(usageContexts):
-        usage[label] = round(
-            100 - (total - (afterStat[index] - beforeStat[index])) * 100 / total, 2
-        )
+    usage['total'] = round(100 - usage['idle'], 2)
 
     return usage
 
 def getUsageStats():
-    lines = grep(readFile('/proc/stat'), 'cpu', ignoreCase=True)
-    return [str(line).replace('cpu', '').strip() for line in lines]
+    fileLines = grep(readFile('/proc/stat'), 'cpu', ignoreCase=True)
+    lines = []
+
+    for line in fileLines:
+        prefixIndexes = re.match('cpu\\d*', line).span()
+        prefix = line[prefixIndexes[0]:prefixIndexes[1]]
+        lines.append(line.replace(prefix, ''))
+
+    return lines
 
 def cpuUsage():
+    global usageContexts
     beforeStat = getUsageStats()
     time.sleep(0.25)
     afterStat = getUsageStats()
+
     try:
         beforeStat = makeListStructure(beforeStat)
         afterStat = makeListStructure(afterStat)
     except:
         return []
+
+    if len(beforeStat) != usageContexts:
+        usageContexts.extend([
+            'steal', 'guest', 'guest_nice'
+        ])
 
     usages = []
     for i in range(len(beforeStat)):
@@ -935,4 +945,4 @@ def dictFormat():
     return dict
 
 if __name__ == '__main__':
-    print(getCurrentScalingDriver())
+    print(cpuUsage())

@@ -1,25 +1,39 @@
 # cputil
 CPU performance utils and information tool CLI & daemon written in Python
 
-# Install
+[//]: # (# Install)
 
-### One liner
-amd64
-```commandline
-wget https://github.com/ryzeon-dev/cputil/releases/download/v6.0.0/cputil_v6.0.0_amd64.tar && tar -xf cputil_v6.0.0_amd64.tar && cd cputil_v6.0.0_amd64 && sudo bash install.sh all
-```
+[//]: # (### One liner)
 
-arm64
-```commandline
-wget https://github.com/ryzeon-dev/cputil/releases/download/v6.0.0/cputil_v6.0.0_arm64.tar && tar -xf cputil_v6.0.0_arm64.tar && cd cputil_v6.0.0_arm64 && sudo bash install.sh all
-```
+[//]: # (amd64)
 
-### Pre-built packages
-- pre-built packages are available for amd64 and arm64 architectures, and can be downloaded from the [releases section]( https://github.com/ryzeon-dev/cputil/releases )
-- once extracted the `tar` file, enter the extracted directory and run 
-  - `sudo bash install.sh bin` to only install the utility program
-  - `sudo bash install.sh daemon` to only install the daemon
-  - `sudo bash install.sh all` to install both
+[//]: # (```commandline)
+
+[//]: # (wget https://github.com/ryzeon-dev/cputil/releases/download/v6.0.0/cputil_v6.0.0_amd64.tar && tar -xf cputil_v6.0.0_amd64.tar && cd cputil_v6.0.0_amd64 && sudo bash install.sh all)
+
+[//]: # (```)
+
+[//]: # ()
+[//]: # (arm64)
+
+[//]: # (```commandline)
+
+[//]: # (wget https://github.com/ryzeon-dev/cputil/releases/download/v6.0.0/cputil_v6.0.0_arm64.tar && tar -xf cputil_v6.0.0_arm64.tar && cd cputil_v6.0.0_arm64 && sudo bash install.sh all)
+
+[//]: # (```)
+
+[//]: # ()
+[//]: # (### Pre-built packages)
+
+[//]: # (- pre-built packages are available for amd64 and arm64 architectures, and can be downloaded from the [releases section]&#40; https://github.com/ryzeon-dev/cputil/releases &#41;)
+
+[//]: # (- once extracted the `tar` file, enter the extracted directory and run )
+
+[//]: # (  - `sudo bash install.sh bin` to only install the utility program)
+
+[//]: # (  - `sudo bash install.sh daemon` to only install the daemon)
+
+[//]: # (  - `sudo bash install.sh all` to install both)
 
 ### Compile from source and install
 
