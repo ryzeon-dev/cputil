@@ -2,11 +2,10 @@
 CPU performance utils and information tool CLI & daemon written in Python
 
 # Install
-
 ### Debian amd64
 
 ```commandline
-wget https://github.com/ryzeon-dev/cputil/releases/download/v6.0.0/cputil_v6.0.0_amd64.tar && tar -xf cputil_v6.0.0_amd64.tar && cd cputil_v6.0.0_amd64 && sudo bash install.sh all
+wget https://github.com/ryzeon-dev/cputil/releases/download/v7.0.0/cputil_7.0.0_amd64.deb && sudo apt install ./cputil_7.0.0_amd64.deb
 ```
 
 ### Compile from source and install
@@ -31,107 +30,133 @@ wget https://github.com/ryzeon-dev/cputil/releases/download/v6.0.0/cputil_v6.0.0
   - run `sudo bash uninstall.sh all` to uninstall both
 
 # Usage
-## Utility
-- running `cputil` with no arguments corresponds to running `cputil info`
+`cputil [COMMAND [arg] [OPTION]]`
 
-### Scaling
-- running `cputil scaling` displays:
-  - available scaling governors
-  - available scaling frequencies
-  - energy performance preference
-  - current scaling driver
-  - current scaling configuration
+## Available commands
+`set, max, min, load, info, scaling, toplogy, temperature, usage, json, yaml, version, watch, help`
 
-### Info 
-- running `cputil info` displays:
+All the commands flagged with `*` require execution as `root`
+
+## `set`*
+- allows to set the value one cpu's parameter
+- available parameters `governor, frequency minimum, frequency maximum, energy preference`
+- usage: `cputil set PARAMETER VALUE [-cpu]`
+  - the `-cpu` flag allows to select the logical processor to affect with the setter
+- setters abbreviations:
+  - `set governor -> sg`
+  - `set frequency minimum -> sfm`
+  - `set frequency maximum -> sfM`
+  - `set energy prefrence -> sep`
+
+## `max`*
+- sets the processor into `maximum performance` mode
+  - sets `performance` scaling governor
+  - sets both minimum and maximum frequency to the highest available value
+  - sets the energy performance preference to `performance`
+
+## `min`*
+- sets the processor into `minimum performance` mode
+  - sets `powersave` scaling governor
+  - sets both minimum and maximum frequency to the lowest available value
+  - sets the energy performance preference to `power`
+
+## `load`*
+- loads a performance template configuration file
+- the configuration files can be saved into `/etc/cputild/templates`
+- usage: `cputil load CONF_FILE`
+- `CONF_FILE` can either be a filepath, or a filename if saved into `/etc/cputild/templates`
+
+## `info`
+- can be abbreviated as `cputil i`
+- `cputil info` shows:
   - model name
   - architecture
   - byte order
   - cores count
   - threads count
-  - clock parameters
+  - clock boost availability
+  - minimum clock
+  - maximum clock
+  - bogomips
+  - virtualization availability
+  - AMD p-state (if available)
+  - flags
 
-### Topology
-- running `cputil topology` displays
-  - threads distribution
-  - cache distribution
-  - cores distribution
+# `scaling`
+- can be abbreviated as `cputil s`
+- `cputil scaling` shows:
+  - available scaling governors
+  - available scaling frequencies
+  - available energy performance preferences
+  - current scaling driver
+  - per-processor setting of `scaling governor, frequencies, energy performance preference`
 
-### Usage
-- running `cputil usage` displays:
-  - both average and logical processor wise usage 
-- if the `-avg` flag is used, only average usage will be shown
+## `topology`
+- can be abbreviated as `cputil t`
+- `cputil topology` shows per-processor:
+  - `L1` cache size and sharing
+  - `L2` cache size and sharing
+  - `L3` cache size and sharing
+  - `physical core` id
+  - `physical die` id 
 
-### Temperature
-- running `cputil temperature` shows all the available CPU-related temperature readings
+## `temperature`
+- can be abbreviated as `cputil T`
+- `cputil temperature` shows the reading of all the cpu related temperature sensors
 
-### Watch
-- running `cputil watch` shows a self-updating continuous display of your CPU state including:
-  - average usage
-  - average frequency
-  - temperatures
+## `usage`
+- can be abbreviated as `cputil u`
+- `cputil usage` shows average and per-processor:
+  - `total` usage
+  - `user` usage
+  - `nice` usage
+  - `system` usage
+  - `idle` usage
+  - `iowait` usage
+  - `interrupt` usage
+  - `soft-interrupt` usage
+  - `steal` usage
+  - `guest` usage
+  - `guest_nice` usage
+  - `frequency` in MHz
+- if the `-avg` flag is added, ony shows average usage info
 
-### Json
-- running `cputil json` displays all available information in json format
+## `json`
+- can be abbreviated as `cputil j`
+- `cputil json` shows all the available information in `JSON` format
 
-### Yaml
-- running `cputil yaml` displays all available information in yaml format
+## `yaml`
+- can be abbreviated as `cputil y`
+- `cputil yaml` shows all the available information in `YAML` format
 
-### Version
-- running `cputil version` displays cputil's verision
+## `version`
+- can be abbreviated as `cputil v`
+- `cputil version` shows the current `cputil` version
 
-### Help
-- run `cputil help` to get help
+## `watch`
+- can be abbreviated as `cputil w`
+- `cputil watch` shows continuous reading of:
+  - average cpu usage
+  - current temperature(s) reading(s)
 
-## Setting
-- setting requires root privilegies
-
-#### Scaling Governor
-- governor setting can be done running `cputil set governor` (or its abbreviated form `cputil sg`) followed by the desired governor
-- the governor must be one of the system allowed ones, run `cputil` with no argument to inspect available ones 
-
-#### Scaling Frequency
-- minimum scaling frequency can be set running `cputil set frequency minimum` (or its abbreviated form `cputil sfm`) followed by the desired scaling frequency 
-- the scaling frequency must be one of the system allowed ones, run `cputil` with no argument to inspect available ones
-
-- minimum scaling frequency can be set running `cputil set frequency maximum` (or its abbreviated form `cputil sfM`) followed by the desired scaling frequency 
-- the scaling frequency must be one of the system allowed ones, run `cputil` with no argument to inspect available ones
-
-#### Energy performance preference
-- energy performance preference can be set by running `cputil set energy preference` (or its abbreviated form `cputil sep`) followed by the desired energy performance preference
-- the energy performance preference must be one of the system allowed ones, run `cputil` with no argument to inspect available ones
-
-### Processor selection
-- if the flag `-cpu` is added, followed by a logical processor's number, any actions will only affect the specified processor
-- when setting any parameter for the entire CPU, if `cputild` daemon is installed, the configuration file will be overwritten with the new parameters 
-
-#### Fast setting
-- maximum or minimum preference can be achieved running `cputil max` or `cputil min`
-  - in the first case, the governor is set to `performance`, minimum and maximum scaling frequencies are set to their max allowed value, the energy performance preference is set to `performance`
-  - in the second case, the governor is set to its weakest value, minimum and maximum scaling frequencies are set to their minimum allowed value, the energy performance preference is set to `power`
-
-- to create a custom configuration
-  - copy `./src/src.conf` file into the destination file you wish
-    - if you want to load the configuration without specifying full path, save it under `/etc/cputild/templates/`
-  - tweak the parameters as you wish (respecting your system's available ones)
-- to load a custom configuration
-  - run `sudo cputil load conf_name` if the configuration file in saved into `/etc/cputild/templates`
-  - or run `sudo cputil load /path/to/conf` if it's saved anywhere else
+## `help`
+- can be abbreviated as `cputil h`
+- `cputil help` shows the help message and exits
 
 ## Daemon
-- useful to set CPU parameters as default
-- in the installation process, it is configured as service, and started
+- maintains cpu parameters setting
+- in the installation process, it is configured as a systemd service, and started
 - once installed (refer to the Install section), the daemon will loop, executing its procedure every 60 seconds
-  - it reads the configuration file, located at /etc/cputild/cputild.conf
+  - it reads the configuration file, located at `/etc/cputild/cputild.conf`
   - parses the configuration, and applies it 
 - the value assigned to configuration parameters must be allowed, check the available values in your system running `cputil` 
 - if any parameter is set to `auto`, it will not be modified
 - configuration parameters are:
-  - governor
-  - min_scaling_frequency
-  - max_scaling_frequency
-  - energy_performance_preference
-  - polling_interval (default value is 10 seconds)
+  - `governor`
+  - `min_scaling_frequency`
+  - `max_scaling_frequency`
+  - `energy_performance_preference`
+  - `polling_interval` (default value is 10 seconds)
 
 ## Example outputs
 
