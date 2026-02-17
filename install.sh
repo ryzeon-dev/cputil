@@ -4,6 +4,7 @@ if [ "$(id -u)" != "0" ]; then
 fi
 
 makeVenv() {
+    echo 'Creating python virtual environment for compilation'
     python3 -m venv venv
     source ./venv/bin/activate
 
@@ -11,36 +12,43 @@ makeVenv() {
 }
 
 removeInstallFiles() {
+    echo 'Removing temp files'
     rm -rf ./build
 }
 
 installDaemon() {
-    mkdir -p /etc/cputild/bin
+    echo 'Creating configuration directories'
     mkdir -p /etc/cputild/templates
 
     cp ./src/cputild.conf /etc/cputild
     cp ./src/cputild.service /etc/cputild
 
+    echo 'Compiling daemon'
     mkdir -p ./build
     cd build
 
     cmake ../daemon_src
     make
 
-    cp ./cputild /etc/cputild/bin
+    echo 'Installing daemon'
+    cp ./cputild /usr/loca/bin/
     cd ..
 
+    echo 'Enabling and starting daemon service'
     systemctl enable /etc/cputild/cputild.service 
     systemctl start cputild
 }
 
 installBin() {
+
     mkdir -p ./build
     cd build
 
     makeVenv
+    echo 'Installing python dependencies into venv'
     pip install pyyaml
 
+    echo 'Compiling python binary'
     pyinstaller --onefile ../src/cputil.py --name cputil
     cp ./dist/cputil /usr/local/bin
     cd ..

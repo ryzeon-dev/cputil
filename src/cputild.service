@@ -2,7 +2,7 @@
 Description = cputil daemon 
 
 [Service]
-ExecStart=/etc/cputild/bin/cputild 
+ExecStart=/usr/local/bin/cputild
 
 [Install]
 WantedBy=default.target

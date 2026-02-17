@@ -7,6 +7,7 @@ uninstallDaemon() {
     systemctl stop cputild
     systemctl disable cputild
     rm -rf /etc/cputild
+    rm /usr/local/bin/cputild
 }
 
 uninstallBin() {

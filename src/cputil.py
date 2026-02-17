@@ -1,14 +1,18 @@
 from argparser import ArgParse
 from lib_cputil import *
 
+import signal
 import json
-import conf
 import yaml
 import sys
+import time
+import os
 
-VERSION = '6.1.4'
+VERSION = '7.0.0'
 
-if __name__ == '__main__':
+run_watch = True
+
+def main():
     args = sys.argv[1:]
     cpu = True
 
@@ -35,14 +39,16 @@ if __name__ == '__main__':
         print('    load CONF_FILE                           Loads template file configuration; CONF_FILE can either be')
         print('                                             a filepath or the name of a file located in the templates')
         print('                                             directory at /etc/cputild/templates/ (root)')
-        print('    info     (i)                             Show CPU info (default)')
-        print('    scaling  (s)                             Show scaling settings')
-        print('    topology (t)                             Show CPU topology')
-        print('    usage    (u)                             Show CPU usage')
-        print('    json     (j)                             Output all available information in JSON format')
-        print('    yaml     (y)                             Output all available information in YAML format')
-        print('    version  (v)                             Show version')
-        print('    help     (h)                             Show this message and exit')
+        print('    info         (i)                         Show CPU info (default)')
+        print('    scaling      (s)                         Show scaling settings')
+        print('    topology     (t)                         Show CPU topology')
+        print('    temperauture (T)                         Show CPU temperature sensors')
+        print('    usage        (u)                         Show CPU usage')
+        print('    json         (j)                         Output all available information in JSON format')
+        print('    yaml         (y)                         Output all available information in YAML format')
+        print('    version      (v)                         Show version')
+        print('    watch        (w)                         Show continuous cpu usage reading')
+        print('    help         (h)                         Show this message and exit')
         print('\nOptions:')
         print('    -cpu CPU                            Select which logical processor to affect with setting action')
         print('                                        Works only with "set governor", "set frequency minimum" ')
@@ -69,7 +75,6 @@ if __name__ == '__main__':
 
         scalingDriver = getCurrentScalingDriver()
         print(f'\nCurrent scaling driver: {scalingDriver}')
-
         print("\nCurrent status:")
 
         try:
@@ -126,7 +131,7 @@ if __name__ == '__main__':
 
         try:
             print(f'Minimum clock:'.ljust(prefixSize) + f'{getMinimumClock()} GHz')
-        except:
+        except KeyboardInterrupt:
             pass
 
         try:
@@ -159,7 +164,8 @@ if __name__ == '__main__':
             sys.exit(0)
 
         try:
-            threadDistribution = threadDistribution()
+            threadDistribution = getThreadDistribution()
+
         except:
             threadDistribution = None
 
@@ -203,7 +209,7 @@ if __name__ == '__main__':
             usages = cpuUsage()
             averageFrequency, frequencies = cpuFrequency()
 
-        except KeyboardInterrupt:
+        except:
             sys.exit(0)
 
         if argParser.cpu:
@@ -320,3 +326,71 @@ if __name__ == '__main__':
             if not setEnergyPerformancePreference(energyPerformancePreference, True):
                 print('Error setting energy performance preference')
                 sys.exit(1)
+
+    elif argParser.temperature:
+        try:
+            temperatureReadings = getCpuTemperature()
+
+        except:
+            print('Error getting cpu temperature')
+            sys.exit(1)
+
+        for sensorName, value in temperatureReadings.items():
+            print(f'{sensorName}: {value} C')
+
+    elif argParser.watch:
+        def sigint_handler(*_):
+            global run_watch
+            run_watch = False
+
+        signal.signal(signal.SIGINT, sigint_handler)
+
+        # try:
+        while run_watch:
+            before = time.time()
+
+            usages = cpuUsage()
+            averageFrequency, frequencies = cpuFrequency()
+
+            try:
+                temperatureReadings = getCpuTemperature()
+            except:
+                temperatureReadings = None
+
+            lines = ['Average Usage:']
+            longestLine = -1
+
+            for label, percent in usages[0].items():
+                line = f'    {(label + ":").ljust(20)}{percent} %'
+                longestLine = max(longestLine, len(line))
+                lines.append(line)
+
+            if averageFrequency:
+                line = f'    Frequency:\t\t{averageFrequency} MHz'
+                longestLine = max(longestLine, len(line))
+                lines.append(line)
+
+            if temperatureReadings is not None:
+                lines.append('Average Temperature:')
+                for sensor, value in temperatureReadings.items():
+                    line = f'    {sensor}:\t\t{value} C'
+                    longestLine = max(longestLine, len(line))
+                    lines.append(line)
+
+            lineCount = len(lines)
+            for line in lines:
+                print(line.ljust(longestLine))
+
+            print(f'\r\x1b[{lineCount + 1}A\x1b[999C')
+
+            after = time.time()
+            time.sleep(1 - (after - before))
+
+        print()
+
+if __name__ == '__main__':
+    try:
+        main()
+
+    except Exception as e:
+        print(f'Fatal: unexpected error `{e}`')

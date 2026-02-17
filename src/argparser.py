@@ -15,11 +15,13 @@ class ArgParse:
         self.scaling = False
         self.info = False
         self.topology = False
+        self.temperature = False
         self.usage = False
         self.json = False
         self.yaml = False
         self.help = False
         self.version = False
+        self.watch = False
         self.cpu = None
         self.avg = False
         self.noArg = False
@@ -161,6 +163,9 @@ class ArgParse:
             elif arg == 'topology' or arg == 't':
                 self.topology = True
 
+            elif arg == 'temperature' or arg == 'T':
+                self.temperature = True
+
             elif arg == 'json' or arg == 'j':
                 self.json = True
 
@@ -169,6 +174,9 @@ class ArgParse:
 
             elif arg == 'version' or arg == 'v':
                 self.version = True
+
+            elif arg == 'watch' or arg == 'w':
+                self.watch = True
 
             elif arg == 'help' or arg == 'h':
                 self.help = True
