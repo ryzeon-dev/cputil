@@ -121,7 +121,8 @@ def getBogoMips():
         return None
 
 def getVirtualizationEnabled():
-    return True if grep(readFile('/proc/cpuinfo'), 'svm', True) or grep(readFile('/proc/cpuinfo'), 'vmx', True) else False
+    return True if (grep(readFile('/proc/cpuinfo'), 'svm', True)
+        or grep(readFile('/proc/cpuinfo'), 'vmx', True)) else False
 
 def getFlags():
     flags = grep(readFile('/proc/cpuinfo'), 'flags', returnFirstMatch=True)
