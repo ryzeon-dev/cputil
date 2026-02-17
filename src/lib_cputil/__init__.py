@@ -25,4 +25,4 @@ from .cpu_topology import (
 
 from .temperature import getCpuTemperature
 
-from .conf import *
+from .conf import parseConf, editConf

@@ -131,7 +131,7 @@ def main():
 
         try:
             print(f'Minimum clock:'.ljust(prefixSize) + f'{getMinimumClock()} GHz')
-        except KeyboardInterrupt:
+        except:
             pass
 
         try:
@@ -165,7 +165,6 @@ def main():
 
         try:
             threadDistribution = getThreadDistribution()
-
         except:
             threadDistribution = None
 
@@ -195,8 +194,7 @@ def main():
 
                 amount = cache[processor][cacheLevel]["amount"]
 
-                print(
-                    f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
+                print(f'    L{cacheLevel} cache: {amount} KB\tshared with processor(s): {", ".join(str(processor) for processor in sharing)}')
 
             if threadDistribution is not None:
                 print(f'    Physical core: {threadDistribution[policy]}')
@@ -259,8 +257,6 @@ def main():
                 sys.exit(1)
 
         elif argParser.setFrequency:
-            frequency = None
-
             if argParser.cpu:
                 cpu = int(argParser.cpu)
 
