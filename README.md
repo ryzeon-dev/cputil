@@ -7,6 +7,7 @@ CPU performance utils and information tool CLI & daemon written in Python
 ```commandline
 wget https://github.com/ryzeon-dev/cputil/releases/download/v7.0.0/cputil_7.0.0_amd64.deb && sudo apt install ./cputil_7.0.0_amd64.deb
 ```
+Please note that the `.deb` package was built on Debian 13, which may result in incompatibility with older Debian versions 
 
 ### Compile from source and install
 
