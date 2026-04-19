@@ -20,8 +20,7 @@ void Config::update() {
             continue;
         }
 
-
-        if (line.substr(0, 9) == "governor:") {\
+        if (line.substr(0, 9) == "governor:") {
             int colonIndex = line.find(':') + 1;
             int length = line.length();
 
@@ -67,6 +66,16 @@ void Config::update() {
 
             } else {
                 this->pollingInterval = atoi(stripped.c_str());;
+            }
+
+        } else if (line.substr(0, 12) == "clocksource:") {
+            int colonIndex = line.find(':') + 1;
+            int length = line.length();
+
+            this->clocksource = string_utils::strip(line.substr(colonIndex, length - colonIndex));
+
+            if (this->clocksource.length() == 0) {
+                this->clocksource = "auto";
             }
         }
     }

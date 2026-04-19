@@ -9,6 +9,7 @@ def parseConf(path):
     scalingMaxFreq = None
     energyPerformancePreference = None
     pollingInterval = None
+    clocksource = None
 
     for line in content.split('\n'):
         if line.startswith('#'):
@@ -32,9 +33,12 @@ def parseConf(path):
             except:
                 pass
 
-    return governor, scalingMinFreq, scalingMaxFreq, energyPerformancePreference, pollingInterval
+        elif (prompt := 'clocksource:') in line:
+            clocksource = line.replace(prompt, '').strip()
 
-def editConf(path, governor=None, scalingMinFreq=None, scalingMaxFreq=None, energyPerformancePreference=None):
+    return governor, scalingMinFreq, scalingMaxFreq, energyPerformancePreference, pollingInterval, clocksource
+
+def editConf(path, governor=None, scalingMinFreq=None, scalingMaxFreq=None, energyPerformancePreference=None, clocksource=None):
     with open(path, 'r') as file:
         content = file.read()
 
@@ -63,6 +67,10 @@ def editConf(path, governor=None, scalingMinFreq=None, scalingMaxFreq=None, ener
         if energyPerformancePreference is not None:
             if line.startswith('energy_performance_preference:'):
                 splitted[index] = f'energy_performance_preference: {energyPerformancePreference}'
+
+        if clocksource is not None:
+            if line.startswith('clocksource:'):
+                splitted[index] = f'clocksource: {clocksource}'
 
         index += 1
 

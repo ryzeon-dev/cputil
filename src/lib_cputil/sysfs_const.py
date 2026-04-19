@@ -105,6 +105,15 @@ def _getEnergyPerformancePreferences():
 
     return list(preferences)
 
+def _getClocksources():
+    global CLOCKSOURCE_DIR
+
+    with open(os.path.join(CLOCKSOURCE_DIR, 'available_clocksource'), 'r') as file:
+        sources = file.read()
+
+    clocksources = set(sources.strip().split(' '))
+    return list(clocksources)
+
 ### SYSFS CONST ###
 
 try:
@@ -119,20 +128,20 @@ _POLICIES = None
 _FREQUENCIES = None
 _GOVERNORS = None
 _ENERGY_PERFORMANCE_PREFERENCES = None
+_CLOCKSOURCES = None
 
 def _initGlobalVariables():
-    global _POLICIES, _FREQUENCIES, _GOVERNORS, _ENERGY_PERFORMANCE_PREFERENCES, _GLOBAL_VARIABLES_TO_INIT
+    global _POLICIES, _FREQUENCIES, _GOVERNORS, _ENERGY_PERFORMANCE_PREFERENCES, _GLOBAL_VARIABLES_TO_INIT, _CLOCKSOURCES
     try:
         _POLICIES = getPolicies()
         _FREQUENCIES = _readScalingFrequencies()
         _GOVERNORS = _findAvailableGovernors()
         _ENERGY_PERFORMANCE_PREFERENCES = _getEnergyPerformancePreferences()
+        _CLOCKSOURCES = _getClocksources()
 
     except:
         print('Error: cannot read scaling information')
         sys.exit(1)
-
-    GLOBAL_VARIABLES_TO_INIT = False
 
 ### CONST GETTERS ###
 
@@ -164,3 +173,9 @@ def reloadEnergyPerformancePreferences():
     global _ENERGY_PERFORMANCE_PREFERENCES
 
     _ENERGY_PERFORMANCE_PREFERENCES = _getEnergyPerformancePreferences()
+
+def getAllClocksources():
+    if _CLOCKSOURCES is None:
+        _initGlobalVariables()
+
+    return _CLOCKSOURCES

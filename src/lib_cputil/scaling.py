@@ -20,7 +20,7 @@ def writePolicyProperty(propertyName, propertyDescription, propertyFile, value, 
         if policy not in getAllPolicies():
             return False
 
-        print(f'Setting governor for processor {cpu} to {value}')
+        print(f'Setting {propertyName} for processor {cpu} to {value}')
 
         if not writePolicyFile(policy, propertyFile, value):
             return False
@@ -61,7 +61,7 @@ def setMinimumScalingFrequency(frequency, cpu, updateConf=True):
 
 def setMaximumScalingFrequency(frequency, cpu, updateConf=True):
     if getAllFrequencies() is None:
-        print(f'Error: cputil.py is unable to detect allowed scaling frequencies')
+        print(f'Error: cputil is unable to detect allowed scaling frequencies')
         return False
 
     if frequency not in getAllFrequencies():
@@ -97,6 +97,23 @@ def setEnergyPerformancePreference(preference, cpu, updateConf=True):
         cpu=cpu,
         updateConf=updateConf
     )
+
+def setClockSource(clocksource):
+    global CLOCKSOURCE_DIR
+    if getAllClocksources() is None:
+        print(f'Error: cputil is unable to detect available clocksources')
+        return False
+
+    if clocksource not in getAllClocksources():
+        print(f'Error: `{clocksource}` is not one of the allowed clocksources')
+        return False
+
+    print(f'Setting {clocksource} clock source')
+
+    with open(os.path.join(CLOCKSOURCE_DIR, 'current_clocksource'), 'w') as file:
+        file.write(clocksource)
+
+    return True
 
 def maxAll():
     maxScalingFrequency = str(max(int(freq) for freq in getAllFrequencies()))
@@ -172,3 +189,11 @@ def getCurrentEnergyPerformancePreferences():
                 currentEnergyPreferences[policy] = file.read().strip()
 
     return currentEnergyPreferences
+
+def getCurrentClocksource():
+    global CLOCKSOURCE_DIR
+
+    with open(os.path.join(CLOCKSOURCE_DIR, 'current_clocksource'), 'r') as file:
+        clocksource = file.read().strip()
+
+    return clocksource

@@ -8,7 +8,7 @@ import sys
 import time
 import os
 
-VERSION = '7.0.0'
+VERSION = '7.1.0'
 
 run_watch = True
 
@@ -30,15 +30,17 @@ def main():
         print('    set frequency minimum (sfm) FREQUENCY    Set minimum scaling frequency (root)')
         print('    set frequency maximum (sfM) FREQUENCY    Set maximum scaling frequency (root)')
         print('    set energy preference (sep) PREFERENCE   Set energy performance preference (root)')
+        print('    set clocksource (sc) CLOCKSOURCE         Set clocksource (root)')
         print('    max                                      Set "performance" governor, set both minimum')
         print('                                             and maximum scaling frequency to highest allowed value')
         print('                                             and set energy performance preference to "performance" (root)')
         print('    min                                      Set "powersave" governor, set both minimum')
         print('                                             and maximum scaling frequency to lowest allowed value')
         print('                                             and set energy performance preference to "power" (root)')
-        print('    load CONF_FILE                           Loads template file configuration; CONF_FILE can either be')
+        print('    load (l) CONF_FILE                       Loads template file configuration; CONF_FILE can either be')
         print('                                             a filepath or the name of a file located in the templates')
         print('                                             directory at /etc/cputild/templates/ (root)')
+        print('    dump         (d)                         Show currently loaded configuration')
         print('    info         (i)                         Show CPU info (default)')
         print('    scaling      (s)                         Show scaling settings')
         print('    topology     (t)                         Show CPU topology')
@@ -73,8 +75,21 @@ def main():
             for preference in getAllEnergyPerformancePreferences():
                 print(f'\t{preference}')
 
+        if getAllClocksources() is not None:
+            print('\nClocksources:')
+
+            for clocksource in getAllClocksources():
+                print(f'\t{clocksource}')
+
         scalingDriver = getCurrentScalingDriver()
         print(f'\nCurrent scaling driver: {scalingDriver}')
+
+        try:
+            currentClocksource = getCurrentClocksource()
+            print(f'\nCurrent clocksource: {currentClocksource}')
+        except:
+            pass
+
         print("\nCurrent status:")
 
         try:
@@ -278,6 +293,11 @@ def main():
                 print('Error setting energy performance preference')
                 sys.exit(1)
 
+        elif argParser.setClocksource:
+            if not setClockSource(argParser.setClocksource):
+                print('Error setting clocksource')
+                sys.exit(1)
+
     elif argParser.version:
         print(f'cputil v{VERSION}')
 
@@ -301,7 +321,7 @@ def main():
             print(f'Error: no such file `{filePath}`')
             sys.exit(1)
 
-        governor, scalingMinFreq, scalingMaxFreq, energyPerformancePreference, _ = conf.parseConf(filePath)
+        governor, scalingMinFreq, scalingMaxFreq, energyPerformancePreference, _, clocksource = parseConf(filePath)
 
         if governor and governor != "auto":
             if not setScalingGovernor(governor, True):
@@ -321,6 +341,11 @@ def main():
         if energyPerformancePreference and energyPerformancePreference != "auto":
             if not setEnergyPerformancePreference(energyPerformancePreference, True):
                 print('Error setting energy performance preference')
+                sys.exit(1)
+
+        if clocksource and clocksource != "auto":
+            if not setClockSource(clocksource):
+                print('Error setting clocksource')
                 sys.exit(1)
 
     elif argParser.temperature:
@@ -383,6 +408,17 @@ def main():
             time.sleep(1 - (after - before))
 
         print()
+
+    elif argParser.dump:
+        try:
+            with open('/etc/cputild/cputild.conf', 'r') as file:
+                conf = file.read()
+        except:
+            print('Error reading currently loaded configuration')
+            sys.exit(1)
+
+        print('Currently loaded configuration:\n')
+        print(conf)
 
 if __name__ == '__main__':
     try:

@@ -37,6 +37,13 @@ int main() {
                 cout << "failure while setting energy_performance_preference" << endl;
         }
 
+        if (config.getClocksource() != "auto") {
+            cout << "setting clocksource to " << config.getClocksource() << endl;
+            if (!lib_cputild::setClocksource(config.getClocksource())) {
+                cout << "failure while setting clocksource" << endl;
+            }
+        }
+
         sleep(config.getPollingInterval());
 
     }

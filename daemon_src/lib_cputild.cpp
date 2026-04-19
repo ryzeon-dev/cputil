@@ -164,6 +164,29 @@ vector<string> lib_cputild::readEnergyPerformancePreferences() {
     return epps;
 }
 
+vector<string> lib_cputild::readClocksources() {
+    vector<string> clocksources;
+
+    string clocksourcesPath = "/sys/devices/system/clocksource/clocksource0/available_clocksource";
+    ifstream clocksourceFile(clocksourcesPath.c_str());
+
+    if (!clocksourceFile.is_open()) {
+        return clocksources;
+    }
+
+    string fileContent = "";
+    string buffer;
+
+    while (getline(clocksourceFile, buffer)) {
+        fileContent += buffer;
+    }
+
+    clocksources = string_utils::split(fileContent, ' ');
+    return clocksources;
+}
+
+
+
 bool lib_cputild::setGovernor(string governor) {
     if (utils::contains(lib_cputild::readScalingGovernors(), governor)) {
         return writeCpufreqFile("scaling_governor", governor);
@@ -190,6 +213,23 @@ bool lib_cputild::setMaxScalingFrequency(int frequency) {
 bool lib_cputild::setEnergyPerformancePreference(string energyPerformancePreference) {
     if (utils::contains(lib_cputild::readEnergyPerformancePreferences(), energyPerformancePreference)) {
         return writeCpufreqFile("energy_performance_preference", energyPerformancePreference);
+    }
+
+    return false;
+}
+
+bool lib_cputild::setClocksource(string clocksource) {
+    if (utils::contains(lib_cputild::readClocksources(), clocksource)) {
+        string filePath = "/sys/devices/system/clocksource/clocksource0/current_clocksource";
+        ofstream file(filePath);
+
+        if (!file.is_open()) {
+            return false;
+        }
+
+        file << clocksource;
+        file.close();
+        return true;
     }
 
     return false;

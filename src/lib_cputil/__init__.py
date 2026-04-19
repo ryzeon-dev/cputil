@@ -10,9 +10,10 @@ from .cpu_info import (
 from .scaling import (
     getAllGovernors, getAllFrequencies, getAllEnergyPerformancePreferences,
     getCurrentScalingFrequencies, getCurrentScalingGovernors, getCurrentEnergyPerformancePreferences,
-    getCurrentScalingDriver,
+    getCurrentScalingDriver, getCurrentClocksource,
 
     setScalingGovernor, setMaximumScalingFrequency, setMinimumScalingFrequency, setEnergyPerformancePreference,
+    setClockSource,
 
     minAll, maxAll
 )

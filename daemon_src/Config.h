@@ -40,6 +40,10 @@ public:
         return pollingInterval;
     }
 
+    string getClocksource() const {
+        return this->clocksource;
+    }
+
 private:
     string path;
 
@@ -48,6 +52,7 @@ private:
     int maxScalingFreq = 0;
     string energyPerformancePreference = "";
     int pollingInterval = 0;
+    string clocksource = "auto";
 };
 
 

@@ -8,6 +8,7 @@ class ArgParse:
         self.setFrequencyMinimum = None
         self.setFrequencyMaximum = None
         self.setEnergyPerformancePreference = None
+        self.setClocksource = None
         self.max = False
         self.min = False
         self.load = False
@@ -24,6 +25,8 @@ class ArgParse:
         self.watch = False
         self.cpu = None
         self.avg = False
+        self.dump = False
+
         self.noArg = False
 
     def parse(self, args):
@@ -40,8 +43,8 @@ class ArgParse:
                 self.set = True
 
                 index += 1
-                if index >= len(args) or (arg := args[index]) not in ('governor', 'frequency', 'energy') :
-                    print('Error: exptecting either `governor`, `frequency` or `energy` after verb `set`')
+                if index >= len(args) or (arg := args[index]) not in ('governor', 'frequency', 'energy', 'clocksource') :
+                    print('Error: exptecting either `governor`, `frequency`, `energy` or `clocksource` after verb `set`')
                     sys.exit(1)
 
                 if arg == 'governor':
@@ -93,6 +96,15 @@ class ArgParse:
 
                     self.setEnergyPerformancePreference = args[index]
 
+                elif arg == 'clocksource':
+                    index += 1
+
+                    if index >= len(args):
+                        print('Error: expecting a clocksource after `set clocksource` command')
+                        sys.exit(1)
+
+                    self.setClocksource = args[index]
+
             elif arg == 'sg':
                 index += 1
 
@@ -135,13 +147,23 @@ class ArgParse:
                 self.set = True
                 self.setEnergyPerformancePreference = args[index]
 
+            elif arg == 'sc':
+                index += 1
+
+                if index >= len(args):
+                    print('Error: expecting a clocksource after abbreviated command `sc`')
+                    sys.exit(1)
+
+                self.set = True
+                self.setClocksource = args[index]
+
             elif arg == 'min':
                 self.min = True
 
             elif arg == 'max':
                 self.max = True
 
-            elif arg == 'load':
+            elif arg == 'load' or arg == 'l':
                 self.load = True
 
                 index += 1
@@ -180,6 +202,9 @@ class ArgParse:
 
             elif arg == 'help' or arg == 'h':
                 self.help = True
+
+            elif arg == 'dump' or arg == 'd':
+                self.dump = True
 
             elif arg == '-cpu':
                 index += 1

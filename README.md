@@ -40,14 +40,16 @@ All the commands flagged with `*` require execution as `root`
 
 ## `set`*
 - allows to set the value one cpu's parameter
-- available parameters `governor, frequency minimum, frequency maximum, energy preference`
+- available parameters `governor, frequency minimum, frequency maximum, energy preference, clocksource`
 - usage: `cputil set PARAMETER VALUE [-cpu]`
   - the `-cpu` flag allows to select the logical processor to affect with the setter
+  - does not work with `set clocksource` 
 - setters abbreviations:
   - `set governor -> sg`
   - `set frequency minimum -> sfm`
   - `set frequency maximum -> sfM`
   - `set energy prefrence -> sep`
+  - `set clocksource -> sc`
 
 ## `max`*
 - sets the processor into `maximum performance` mode
@@ -89,7 +91,9 @@ All the commands flagged with `*` require execution as `root`
   - available scaling governors
   - available scaling frequencies
   - available energy performance preferences
+  - available clocksourecs
   - current scaling driver
+  - current clocksource
   - per-processor setting of `scaling governor, frequencies, energy performance preference`
 
 ## `topology`
@@ -162,56 +166,66 @@ All the commands flagged with `*` require execution as `root`
 ## Example outputs
 
 ```
-$ cputil
-Available governors:
-        powersave
-        performance
+$ cputil scaling
+
+Available scaling governors:
+	powersave
+	performance
 
 Available scaling frequencies:
-        600000
-        2981000
-        5752000
+	600000
+	2981000
+	5752000
 
 Energy performance preferences:
-        performance
-        power
-        default
-        balance_power
-        balance_performance
+	power
+	balance_power
+	balance_performance
+	performance
+	default
+
+Clocksources:
+	hpet
+	acpi_pm
+	tsc
+
+Current scaling driver: amd-pstate-epp
+
+Current clocksource: acpi_pm
 
 Current status:
-Processor 0:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 1:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 2:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 3:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 4:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 5:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 6:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 7:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 8:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 9:    powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 10:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 11:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 12:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 13:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 14:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 15:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 16:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 17:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 18:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 19:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 20:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 21:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 22:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 23:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 24:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 25:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 26:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 27:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 28:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 29:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 30:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 31:   powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 0:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 1:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 2:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 3:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 4:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 5:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 6:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 7:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 8:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 9:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 10:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 11:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 12:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 13:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 14:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 15:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 16:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 17:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 18:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 19:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 20:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 21:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 22:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 23:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 24:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 25:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 26:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 27:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 28:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 29:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 30:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor 31:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
 ```
 
 ```
