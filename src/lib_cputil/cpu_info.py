@@ -120,12 +120,16 @@ def getBogoMips():
     except:
         return None
 
-def getVirtualizationEnabled():
-    return True if (grep(readFile('/proc/cpuinfo'), 'svm', True)
-        or grep(readFile('/proc/cpuinfo'), 'vmx', True)) else False
+def getVirtualizationEnabled() -> bool:
+    cpuinfo = readFile('/proc/cpuinfo')
+    return 'svm' in cpuinfo or 'vmx' in cpuinfo
 
-def getFlags():
-    flags = grep(readFile('/proc/cpuinfo'), 'flags', returnFirstMatch=True)
+def getFlags() -> str | None:
+    flags = ''
+    for line in readFile('/proc/cpuinfo').split('\n'):
+        if 'flags' in line:
+            flags = line
+            break
 
     if flags and ':' in flags:
         return flags.split(':')[1].strip()

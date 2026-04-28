@@ -1,5 +1,5 @@
 # cputil
-CPU performance utils and information tool CLI & daemon written in Python
+CPU performance utils and information tool CLI & daemon written in Python and C++
 
 # Install
 ### Debian amd64
@@ -34,7 +34,7 @@ Please note that the `.deb` package was built on Debian 13, which may result in 
 `cputil [COMMAND [arg] [OPTION]]`
 
 ## Available commands
-`set, max, min, load, info, scaling, toplogy, temperature, usage, json, yaml, version, watch, help`
+`set, max, min, load, all, info, scaling, toplogy, temperature, usage, energy, prefcore, cstate, vuln, json, yaml, version, watch, help`
 
 All the commands flagged with `*` require execution as `root`
 
@@ -43,13 +43,16 @@ All the commands flagged with `*` require execution as `root`
 - available parameters `governor, frequency minimum, frequency maximum, energy preference, clocksource`
 - usage: `cputil set PARAMETER VALUE [-cpu]`
   - the `-cpu` flag allows to select the logical processor to affect with the setter
-  - does not work with `set clocksource` 
+  - does not work with `set clocksource` and `set cstate`
+- cstate setting has a different syntax:
+  - `set cstate STATE enabled/disabled`
 - setters abbreviations:
   - `set governor -> sg`
   - `set frequency minimum -> sfm`
   - `set frequency maximum -> sfM`
   - `set energy prefrence -> sep`
   - `set clocksource -> sc`
+  - `set cstate -> sC`
 
 ## `max`*
 - sets the processor into `maximum performance` mode
@@ -68,6 +71,19 @@ All the commands flagged with `*` require execution as `root`
 - the configuration files can be saved into `/etc/cputild/templates`
 - usage: `cputil load CONF_FILE`
 - `CONF_FILE` can either be a filepath, or a filename if saved into `/etc/cputild/templates`
+
+## `all`
+- can be abbreviated as `cputil a`
+- shows, in order, the following information:
+  - processor info 
+  - scaling info
+  - topology info
+  - energy info
+  - prefcore info
+  - c-state info
+  - vulnerabilities info
+  - temperature info
+  - usage info
 
 ## `info`
 - can be abbreviated as `cputil i`
@@ -126,6 +142,26 @@ All the commands flagged with `*` require execution as `root`
   - `frequency` in MHz
 - if the `-avg` flag is added, ony shows average usage info
 
+## `energy`
+- can be abbreviated as `cputil e`
+- shows energy consumption in Joule, listing every available sensor
+- may require root privilegies to execute
+
+## `prefcore`
+- can be abbreviated as `cputil p`
+- shows per-core prefcore ranking
+
+## `cstate`
+- can be abbreviated as `cputil c`
+- shows:
+  - available idle states, with relative description and latency
+  - per-core c-state usage and if enabled/disabled
+
+## `vuln`
+- can be abbreviated as `cputil v`
+- shows the system-known CPU vulnerabilities and if the processor is affected
+  - if affected, shows how they are mitigated
+
 ## `json`
 - can be abbreviated as `cputil j`
 - `cputil json` shows all the available information in `JSON` format
@@ -135,7 +171,7 @@ All the commands flagged with `*` require execution as `root`
 - `cputil yaml` shows all the available information in `YAML` format
 
 ## `version`
-- can be abbreviated as `cputil v`
+- can be abbreviated as `cputil V`
 - `cputil version` shows the current `cputil` version
 
 ## `watch`
@@ -163,11 +199,25 @@ All the commands flagged with `*` require execution as `root`
   - `energy_performance_preference`
   - `polling_interval` (default value is 10 seconds)
 
-## Example outputs
+## Sample output
 
 ```
-$ cputil scaling
+$ cputil info
+Model name:             AMD Ryzen 9 9950X 16-Core Processor
+Architecture:           amd64 / x86_64 (64bit)
+Byte order:             Little Endian (first bit is LSB)
+Cores count:            16
+Threads count:          32
+Clock boost:            active
+Minimum clock:          0.6 GHz
+Maximum clock:          5.75 GHz
+BogoMIPS:               8583.74
+Virtualization:         enabled
+AMD P-State status:     active
+AMD P-State prefcore:   enabled
+Flags:                  fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload vgif v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze
 
+$ cputil scaling
 Available scaling governors:
 	powersave
 	performance
@@ -178,32 +228,32 @@ Available scaling frequencies:
 	5752000
 
 Energy performance preferences:
-	power
 	balance_power
+	power
+	default
 	balance_performance
 	performance
-	default
 
 Clocksources:
-	hpet
 	acpi_pm
 	tsc
+	hpet
 
 Current scaling driver: amd-pstate-epp
 
-Current clocksource: acpi_pm
+Current clocksource: tsc
 
 Current status:
-Processor 0:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 1:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 2:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 3:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 4:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 5:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 6:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 7:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 8:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 9:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor  0:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor  1:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor  2:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor  3:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor  4:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor  5:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor  6:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor  7:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor  8:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+Processor  9:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
 Processor 10:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
 Processor 11:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
 Processor 12:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
@@ -226,27 +276,9 @@ Processor 28:	powersave governor    frequency max = 5752000, min = 2981000    en
 Processor 29:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
 Processor 30:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
 Processor 31:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-```
 
-```
-$ cputil info
-Model name:             AMD Ryzen 9 9950X 16-Core Processor
-Architecture:           amd64 / x86_64 (64bit)
-Byte order:             Little Endian (first bit is LSB)
-Cores count:            16
-Threads count:          32
-Clock boost:            active
-Minimum clock:          0.6 GHz
-Maximum clock:          5.75 GHz
-BogoMIPS:               8583.71
-Virtualization:         enabled
-AMD P-State status:     active
-AMD P-State prefcore:   enabled
-Flags:                  fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq rdseed adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload vgif v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze
-```
-
-```
 $ cputil topology
+
 Processor 0:
     L2 cache: 1024 KB	shared with processor(s): 16
     L1 cache: 80 KB	shared with processor(s): 16
@@ -470,18 +502,537 @@ Processor 31:
     L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
     Physical core: 15
     Physical die: 1
-```
 
-```
-$ cputil usage -avg
+$ cputil temperature
+Tctl: 40.875 C
+
+$ cputil usage
 Average:
     total:              0.75 %
-    user:               0.12 %
+    user:               0.25 %
+    nice:               0.0 %
+    system:             0.38 %
+    idle:               99.25 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.13 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency:		4281.98 MHz
+
+Processor: 0
+    total:              3.85 %
+    user:               0.0 %
     nice:               0.0 %
     system:             0.0 %
-    idle:               99.25 %
-    iowait:             0.62 %
+    idle:               96.15 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     3.85 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		3702.17 MHz
+
+Processor: 1
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
     interrupt:          0.0 %
     soft-interrupt:     0.0 %
-    Frequency:          4042.61 MHz
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		3917.58 MHz
+
+Processor: 2
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		3860.97 MHz
+
+Processor: 3
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		4016.32 MHz
+
+Processor: 4
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		2981.0 MHz
+
+Processor: 5
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		2981.0 MHz
+
+Processor: 6
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5720.48 MHz
+
+Processor: 7
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5716.27 MHz
+
+Processor: 8
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5427.97 MHz
+
+Processor: 9
+    total:              3.85 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             3.85 %
+    idle:               96.15 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		4154.04 MHz
+
+Processor: 10
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		2981.0 MHz
+
+Processor: 11
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		2981.0 MHz
+
+Processor: 12
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5459.81 MHz
+
+Processor: 13
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		2981.0 MHz
+
+Processor: 14
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		2981.0 MHz
+
+Processor: 15
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5459.36 MHz
+
+Processor: 16
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		2981.0 MHz
+
+Processor: 17
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		3738.72 MHz
+
+Processor: 18
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		2981.0 MHz
+
+Processor: 19
+    total:              3.85 %
+    user:               3.85 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               96.15 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		3799.37 MHz
+
+Processor: 20
+    total:              4.0 %
+    user:               4.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               96.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5721.52 MHz
+
+Processor: 21
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		3878.06 MHz
+
+Processor: 22
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5722.47 MHz
+
+Processor: 23
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5723.14 MHz
+
+Processor: 24
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5465.84 MHz
+
+Processor: 25
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		4909.28 MHz
+
+Processor: 26
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5428.47 MHz
+
+Processor: 27
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		3532.7 MHz
+
+Processor: 28
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		3917.49 MHz
+
+Processor: 29
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5459.13 MHz
+
+Processor: 30
+    total:              0.0 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             0.0 %
+    idle:               100.0 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		2981.0 MHz
+
+Processor: 31
+    total:              11.11 %
+    user:               0.0 %
+    nice:               0.0 %
+    system:             11.11 %
+    idle:               88.89 %
+    iowait:             0.0 %
+    interrupt:          0.0 %
+    soft-interrupt:     0.0 %
+    steal:              0.0 %
+    guest:              0.0 %
+    guest_nice:         0.0 %
+    Frequency: 		5463.3 MHz
+
+$ cputil energy
+Intel RAPL: enabled
+Sensors:
+    core: 0.60196 J/s
+    package-0: 36.612976 J/s
+
+$ cputil prefcore
+Core  0 [CCD0]: 216
+Core  1 [CCD0]: 221
+Core  2 [CCD0]: 236  [preferred]
+Core  3 [CCD0]: 231
+Core  4 [CCD0]: 236  [preferred]
+Core  5 [CCD0]: 226
+Core  6 [CCD0]: 206
+Core  7 [CCD0]: 211
+Core  8 [CCD1]: 176
+Core  9 [CCD1]: 191
+Core 10 [CCD1]: 196
+Core 11 [CCD1]: 201
+Core 12 [CCD1]: 181
+Core 13 [CCD1]: 186
+Core 14 [CCD1]: 166
+Core 15 [CCD1]: 171
+
+$ cputil cstate
+States:
+  C1   -> ACPI FFH MWAIT 0x0 [latency: 1]
+  C2   -> ACPI IOPORT 0x414 [latency: 18]
+  C3   -> ACPI IOPORT 0x415 [latency: 350]
+  POLL -> CPUIDLE CORE POLL IDLE [latency: 0]
+
+Core  0    C1 [enabled]:   0.81 %    C2 [enabled]:   1.91 %    C3 [enabled]:  97.25 %    POLL [enabled]:   0.04 %
+Core  1    C1 [enabled]:   1.23 %    C2 [enabled]:   2.68 %    C3 [enabled]:  96.04 %    POLL [enabled]:   0.04 %
+Core  2    C1 [enabled]:   0.75 %    C2 [enabled]:   1.80 %    C3 [enabled]:  97.42 %    POLL [enabled]:   0.04 %
+Core  3    C1 [enabled]:   1.44 %    C2 [enabled]:   3.37 %    C3 [enabled]:  95.15 %    POLL [enabled]:   0.04 %
+Core  4    C1 [enabled]:   0.77 %    C2 [enabled]:   1.92 %    C3 [enabled]:  97.26 %    POLL [enabled]:   0.04 %
+Core  5    C1 [enabled]:   0.61 %    C2 [enabled]:   4.23 %    C3 [enabled]:  95.12 %    POLL [enabled]:   0.04 %
+Core  6    C1 [enabled]:   0.57 %    C2 [enabled]:   3.19 %    C3 [enabled]:  96.20 %    POLL [enabled]:   0.04 %
+Core  7    C1 [enabled]:   0.96 %    C2 [enabled]:   2.18 %    C3 [enabled]:  96.81 %    POLL [enabled]:   0.04 %
+Core  8    C1 [enabled]:   1.58 %    C2 [enabled]:   3.35 %    C3 [enabled]:  95.04 %    POLL [enabled]:   0.03 %
+Core  9    C1 [enabled]:   1.80 %    C2 [enabled]:   5.52 %    C3 [enabled]:  92.65 %    POLL [enabled]:   0.04 %
+Core 10    C1 [enabled]:   1.66 %    C2 [enabled]:   3.55 %    C3 [enabled]:  94.75 %    POLL [enabled]:   0.04 %
+Core 11    C1 [enabled]:   3.06 %    C2 [enabled]:   5.74 %    C3 [enabled]:  91.12 %    POLL [enabled]:   0.08 %
+Core 12    C1 [enabled]:   1.20 %    C2 [enabled]:   2.37 %    C3 [enabled]:  96.40 %    POLL [enabled]:   0.03 %
+Core 13    C1 [enabled]:   1.21 %    C2 [enabled]:   2.17 %    C3 [enabled]:  96.59 %    POLL [enabled]:   0.03 %
+Core 14    C1 [enabled]:   1.16 %    C2 [enabled]:   2.02 %    C3 [enabled]:  96.79 %    POLL [enabled]:   0.03 %
+Core 15    C1 [enabled]:   1.64 %    C2 [enabled]:  17.43 %    C3 [enabled]:  80.91 %    POLL [enabled]:   0.02 %
+
+$ cputil vuln
+spectre_v2                -> Mitigation: Enhanced / Automatic IBRS; IBPB: conditional; STIBP: always-on; PBRSB-eIBRS: Not affected; BHI: Not affected
+indirect_target_selection -> Not affected
+itlb_multihit             -> Not affected
+vmscape                   -> Mitigation: IBPB on VMEXIT
+mmio_stale_data           -> Not affected
+mds                       -> Not affected
+reg_file_data_sampling    -> Not affected
+tsa                       -> Not affected
+l1tf                      -> Not affected
+spec_store_bypass         -> Mitigation: Speculative Store Bypass disabled via prctl
+tsx_async_abort           -> Not affected
+spectre_v1                -> Mitigation: usercopy/swapgs barriers and __user pointer sanitization
+gather_data_sampling      -> Not affected
+retbleed                  -> Not affected
+spec_rstack_overflow      -> Mitigation: IBPB on VMEXIT only
+srbds                     -> Not affected
+meltdown                  -> Not affected
 ```

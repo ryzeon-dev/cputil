@@ -1,3 +1,7 @@
+from .cpu_vulnerabilities import getCpuVulnerabilities
+from .cpu_prefcore import getCpuPrefcores
+from .cpu_energy_consumption import getCpuEnergyConsumption
+from .cpu_cstate import getCpuCstates
 from .cpu_topology import cpuCache, getThreadDistribution, processorDieDistribution, processorSort, processorsFromRange
 
 from .cpu_info import (
@@ -19,27 +23,27 @@ def wrap(string):
 def dictFormat():
     dict = {}
 
-    dict["model name"] = getModelName()
+    dict["model_name"] = getModelName()
     dict['architecture'] = getArchitecture()
-    dict['byte order'] = getByteOrder()[0]
+    dict['byte_order'] = getByteOrder()[0]
 
-    dict['core count'] = int(getCoreCount())
-    dict['thread count'] = int(getThreadCount())
+    dict['core_count'] = int(getCoreCount())
+    dict['thread_count'] = int(getThreadCount())
 
-    dict['clock boost'] = getClockBoost()
+    dict['clock_boost'] = getClockBoost()
     dict['bogomips'] = getBogoMips()
 
-    dict['minimum frequency'] = int(float(getMinimumClock()) * 1000)
-    dict['maximum frequency'] = int(float(getMaximumClock()) * 1000)
+    dict['minimum_frequency'] = int(float(getMinimumClock()) * 1000)
+    dict['maximum_frequency'] = int(float(getMaximumClock()) * 1000)
 
     dict['governors'] = [governor for governor in getAllGovernors()]
-    dict['scaling frequencies'] = [int(frequency) for frequency in getAllFrequencies()]
-    dict['energy performance preferences'] = [epp for epp in getAllEnergyPerformancePreferences()]
+    dict['scaling_frequencies'] = [int(frequency) for frequency in getAllFrequencies()]
+    dict['energy_performance_preferences'] = [epp for epp in getAllEnergyPerformancePreferences()]
 
     status, prefcore = getAmdPState()
 
-    dict['amd-p-state-status'] = status
-    dict['amd-p-state-prefcore'] = prefcore
+    dict['amd_p_state_status'] = status
+    dict['amd_p_state_prefcore'] = prefcore
 
     scalingFrequencies = getCurrentScalingFrequencies()
     governors = getCurrentScalingGovernors()
@@ -74,16 +78,16 @@ def dictFormat():
             'usage': {},
             'frequency': '',
             'cache': {},
-            'minimum scaling frequency': '',
-            'maximum scaling frequency': '',
+            'minimum_scaling_frequency': '',
+            'maximum_scaling_frequency': '',
             'governor': '',
-            'energy performance preference': ''
+            'energy_performance_preference': ''
         }
 
         try:
             scaling = scalingFrequencies[f'policy{index}']
-            dict[processorId]['minimum scaling frequency'] = int(scaling['min'])
-            dict[processorId]['maximum scaling frequency'] = int(scaling['max'])
+            dict[processorId]['minimum_scaling_frequency'] = int(scaling['min'])
+            dict[processorId]['maximum_scaling_frequency'] = int(scaling['max'])
 
         except:
             pass
@@ -97,7 +101,7 @@ def dictFormat():
 
         try:
             preference = energyPerformancePreferences[f'policy{index}']
-            dict[processorId]['energy performance preference'] = str(preference)
+            dict[processorId]['energy_performance_preference'] = str(preference)
 
         except:
             pass
@@ -107,10 +111,10 @@ def dictFormat():
 
         dict[processorId]['frequency'] = int(frequencies[index]) if frequencies and index < len(frequencies) and frequencies[index] is not None else ''
         if threadDist:
-            dict[processorId]['physical core'] = int(threadDist[index])
+            dict[processorId]['physical_core'] = int(threadDist[index])
 
         if dieDist:
-            dict[processorId]['physical die'] = int(dieDist[index]) if dieDist else ''
+            dict[processorId]['physical_die'] = int(dieDist[index]) if dieDist else ''
 
         if cache is not None:
             processorCacheKey = sortedCache[index]
@@ -133,6 +137,35 @@ def dictFormat():
         pass
     else:
         dict['temperature'] = temperatureReadings
+
+    try:
+        cstates, coreCstates = getCpuCstates()
+    except:
+        pass
+    else:
+        dict['cstates'] = [cstate.toJson() for cstate in cstates]
+        dict['core_cstates'] = [coreCstate.toJson() for coreCstate in coreCstates]
+
+    try:
+        energtConsumption = getCpuEnergyConsumption()
+    except:
+        pass
+    else:
+        dict['energy_consumption'] = energtConsumption.toJson()
+
+    try:
+        prefcores = getCpuPrefcores()
+    except:
+        pass
+    else:
+        dict['prefcores'] = [prefcore.toJson() for prefcore in prefcores]
+
+    try:
+        vulnerabilities = getCpuVulnerabilities()
+    except:
+        pass
+    else:
+        dict['vulnerabilities'] = [vulnerability.toJson() for vulnerability in vulnerabilities]
 
     return dict
 

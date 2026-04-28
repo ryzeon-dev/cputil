@@ -1,5 +1,4 @@
 from .conf import confFilePath, editConf
-from .static_const import *
 from .sysfs_const import *
 
 def writePolicyProperty(propertyName, propertyDescription, propertyFile, value, cpu, updateConf):
@@ -137,7 +136,7 @@ def minAll():
 
     setEnergyPerformancePreference('power', True)
 
-def getCurrentScalingDriver():
+def getCurrentScalingDriver() -> str:
     drivers = set()
 
     for policy in getAllPolicies():
@@ -149,14 +148,14 @@ def getCurrentScalingDriver():
 
     return ','.join(drivers)
 
-def getCurrentScalingGovernors():
+def getCurrentScalingGovernors() -> set[str]:
     governors = {}
     for policy in getAllPolicies():
         governors[policy] = readFile(f'{CPUFREQ_DIR}/{policy}/scaling_governor').strip()
 
     return governors
 
-def getCurrentScalingFrequencies():
+def getCurrentScalingFrequencies() -> dict[str, dict[str, float]]:
     frequencies = {}
 
     for policy in getAllPolicies():
@@ -175,7 +174,7 @@ def getCurrentScalingFrequencies():
 
     return frequencies
 
-def getCurrentEnergyPerformancePreferences():
+def getCurrentEnergyPerformancePreferences() -> dict[str, str]:
     global CPUFREQ_CONTENT
     currentEnergyPreferences = {}
 
@@ -190,7 +189,7 @@ def getCurrentEnergyPerformancePreferences():
 
     return currentEnergyPreferences
 
-def getCurrentClocksource():
+def getCurrentClocksource() -> str:
     global CLOCKSOURCE_DIR
 
     with open(os.path.join(CLOCKSOURCE_DIR, 'current_clocksource'), 'r') as file:

@@ -27,3 +27,11 @@ from .cpu_topology import (
 from .temperature import getCpuTemperature
 
 from .conf import parseConf, editConf
+
+from .cpu_energy_consumption import getCpuEnergyConsumption
+
+from .cpu_prefcore import getCpuPrefcores
+
+from .cpu_cstate import getCpuCstates, setCpuCstateEnabled
+
+from .cpu_vulnerabilities import getCpuVulnerabilities

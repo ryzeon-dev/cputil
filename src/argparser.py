@@ -9,6 +9,8 @@ class ArgParse:
         self.setFrequencyMaximum = None
         self.setEnergyPerformancePreference = None
         self.setClocksource = None
+        self.setIdleState = None
+        self.setIdleStateEnabled = None
         self.max = False
         self.min = False
         self.load = False
@@ -18,6 +20,11 @@ class ArgParse:
         self.topology = False
         self.temperature = False
         self.usage = False
+        self.energy = False
+        self.prefcore = False
+        self.cstate = False
+        self.vuln = False
+        self.all = False
         self.json = False
         self.yaml = False
         self.help = False
@@ -43,8 +50,8 @@ class ArgParse:
                 self.set = True
 
                 index += 1
-                if index >= len(args) or (arg := args[index]) not in ('governor', 'frequency', 'energy', 'clocksource') :
-                    print('Error: exptecting either `governor`, `frequency`, `energy` or `clocksource` after verb `set`')
+                if index >= len(args) or (arg := args[index]) not in ('governor', 'frequency', 'energy', 'clocksource', 'idle') :
+                    print('Error: exptecting either `governor`, `frequency`, `energy`, `clocksource` or `idle` after verb `set`')
                     sys.exit(1)
 
                 if arg == 'governor':
@@ -105,6 +112,23 @@ class ArgParse:
 
                     self.setClocksource = args[index]
 
+                elif arg == 'cstate':
+                    index += 1
+
+                    if index >= len(args):
+                        print('Error: expecting a state after `set cstate` command')
+                        sys.exit(1)
+
+                    self.setIdleState = args[index]
+                    index += 1
+
+                    if index >= len(args):
+                        print(f'Error: expecting enabled/disabled after `set cstate {self.setIdleState}` command')
+                        sys.exit(1)
+
+                    self.set = True
+                    self.setIdleStateEnabled = not (args[index] == "disabled")
+
             elif arg == 'sg':
                 index += 1
 
@@ -157,6 +181,23 @@ class ArgParse:
                 self.set = True
                 self.setClocksource = args[index]
 
+            elif arg == 'sC':
+                index += 1
+
+                if index >= len(args):
+                    print('Error: expecting a state after `sC` command')
+                    sys.exit(1)
+
+                self.setIdleState = args[index]
+                index += 1
+
+                if index >= len(args):
+                    print(f'Error: expecting enabled/disabled after `sC {self.setIdleState}` command')
+                    sys.exit(1)
+
+                self.set = True
+                self.setIdleStateEnabled = not (args[index] == "disabled")
+
             elif arg == 'min':
                 self.min = True
 
@@ -194,7 +235,7 @@ class ArgParse:
             elif arg == 'yaml' or arg == 'y':
                 self.yaml = True
 
-            elif arg == 'version' or arg == 'v':
+            elif arg == 'version' or arg == 'V':
                 self.version = True
 
             elif arg == 'watch' or arg == 'w':
@@ -205,6 +246,21 @@ class ArgParse:
 
             elif arg == 'dump' or arg == 'd':
                 self.dump = True
+
+            elif arg == 'energy' or arg == 'e':
+                self.energy = True
+
+            elif arg == 'prefcore' or arg == 'p':
+                self.prefcore = True
+
+            elif arg == 'cstate' or arg == 'c':
+                self.cstate = True
+
+            elif arg == 'vuln' or arg == 'v':
+                self.vuln = True
+
+            elif arg == 'all' or arg == 'a':
+                self.all = True
 
             elif arg == '-cpu':
                 index += 1

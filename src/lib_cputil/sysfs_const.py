@@ -119,7 +119,7 @@ def _getClocksources():
 try:
     CPUFREQ_CONTENT = os.listdir(CPUFREQ_DIR)
 
-except:
+except Exception as e:
     print('Error: cannot access cpufreq\'s sysfs')
     exit(1)
 
