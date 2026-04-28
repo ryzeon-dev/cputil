@@ -31,7 +31,7 @@ installDaemon() {
     make
 
     echo 'Installing daemon'
-    cp ./cputild /usr/loca/bin/
+    cp ./cputild /usr/local/bin/
     cd ..
 
     echo 'Enabling and starting daemon service'
