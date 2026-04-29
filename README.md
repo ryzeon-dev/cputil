@@ -1,205 +1,185 @@
 # cputil
-CPU performance utils and information tool CLI & daemon written in Python and C++
+A Linux CLI tool and daemon for CPU inspection, diagnostics, and tuning. One command to see everything about your processor — and one command to change it.
+
+cputil combines what you'd normally get from lscpu, cpupower, sensors, and manual sysfs poking into a single tool with a clean interface. It has first-class support for AMD P-State and Zen-specific features like prefcore ranking and CCD-aware topology.
+
+## Quick look
+```commandline
+$ cputil prefcore
+Core  0 [CCD0]: 216
+Core  1 [CCD0]: 221
+Core  2 [CCD0]: 236  [preferred]
+Core  3 [CCD0]: 231
+Core  4 [CCD0]: 236  [preferred]
+Core  5 [CCD0]: 226
+Core  6 [CCD0]: 206
+Core  7 [CCD0]: 211
+Core  8 [CCD1]: 176
+Core  9 [CCD1]: 191
+Core 10 [CCD1]: 196
+Core 11 [CCD1]: 201
+Core 12 [CCD1]: 181
+Core 13 [CCD1]: 186
+Core 14 [CCD1]: 166
+Core 15 [CCD1]: 171
+```
+
+```commandline
+$ cputil cstate
+States:
+  C1   -> ACPI FFH MWAIT 0x0 [latency: 1]
+  C2   -> ACPI IOPORT 0x414 [latency: 18]
+  C3   -> ACPI IOPORT 0x415 [latency: 350]
+  POLL -> CPUIDLE CORE POLL IDLE [latency: 0]
+
+Percent values since boot
+
+Core  0    C1 [enabled]:   0.22 %    C2 [enabled]:   0.58 %    C3 [enabled]:  99.18 %    POLL [enabled]:   0.02 %
+Core  1    C1 [enabled]:   0.36 %    C2 [enabled]:   0.98 %    C3 [enabled]:  98.64 %    POLL [enabled]:   0.02 %
+Core  2    C1 [enabled]:   0.18 %    C2 [enabled]:   1.28 %    C3 [enabled]:  98.51 %    POLL [enabled]:   0.03 %
+Core  3    C1 [enabled]:   0.43 %    C2 [enabled]:   1.60 %    C3 [enabled]:  97.94 %    POLL [enabled]:   0.03 %
+Core  4    C1 [enabled]:   0.24 %    C2 [enabled]:   0.62 %    C3 [enabled]:  99.12 %    POLL [enabled]:   0.02 %
+Core  5    C1 [enabled]:   0.27 %    C2 [enabled]:   0.64 %    C3 [enabled]:  99.07 %    POLL [enabled]:   0.02 %
+Core  6    C1 [enabled]:   0.20 %    C2 [enabled]:   1.16 %    C3 [enabled]:  98.62 %    POLL [enabled]:   0.02 %
+Core  7    C1 [enabled]:   0.28 %    C2 [enabled]:   0.69 %    C3 [enabled]:  99.01 %    POLL [enabled]:   0.03 %
+...
+```
+
+```commandline
+$ cputil info
+Model name:             AMD Ryzen 9 9950X 16-Core Processor
+Architecture:           amd64 / x86_64 (64bit)
+Byte order:             Little Endian (first bit is LSB)
+Cores count:            16
+Threads count:          32
+Clock boost:            active
+Minimum clock:          0.6 GHz
+Maximum clock:          5.75 GHz
+BogoMIPS:               8583.31
+Virtualization:         enabled
+AMD P-State status:     active
+AMD P-State prefcore:   enabled
+Flags:                  fpu vme de pse tsc msr pae mce cx8 apic sep mtrr pge mca cmov pat pse36 clflush mmx fxsr sse sse2 ht syscall nx mmxext fxsr_opt pdpe1gb rdtscp lm constant_tsc rep_good amd_lbr_v2 nopl xtopology nonstop_tsc cpuid extd_apicid aperfmperf rapl pni pclmulqdq monitor ssse3 fma cx16 sse4_1 sse4_2 movbe popcnt aes xsave avx f16c rdrand lahf_lm cmp_legacy svm extapic cr8_legacy abm sse4a misalignsse 3dnowprefetch osvw ibs skinit wdt tce topoext perfctr_core perfctr_nb bpext perfctr_llc mwaitx cpb cat_l3 cdp_l3 hw_pstate ssbd mba perfmon_v2 ibrs ibpb stibp ibrs_enhanced vmmcall fsgsbase tsc_adjust bmi1 avx2 smep bmi2 erms invpcid cqm rdt_a avx512f avx512dq adx smap avx512ifma clflushopt clwb avx512cd sha_ni avx512bw avx512vl xsaveopt xsavec xgetbv1 xsaves cqm_llc cqm_occup_llc cqm_mbm_total cqm_mbm_local user_shstk avx_vnni avx512_bf16 clzero irperf xsaveerptr rdpru wbnoinvd cppc arat npt lbrv svm_lock nrip_save tsc_scale vmcb_clean flushbyasid decodeassists pausefilter pfthreshold v_vmsave_vmload vgif v_spec_ctrl vnmi avx512vbmi umip pku ospke avx512_vbmi2 gfni vaes vpclmulqdq avx512_vnni avx512_bitalg avx512_vpopcntdq rdpid bus_lock_detect movdiri movdir64b overflow_recov succor smca fsrm avx512_vp2intersect flush_l1d amd_lbr_pmc_freeze
+```
+
+# Features
+**Inspect** — CPU info, topology, cache hierarchy, scaling configuration, temperatures, energy consumption (Intel RAPL), per-core usage breakdown, C-state idle residency, AMD prefcore ranking with CCD grouping, and known CPU vulnerabilities with mitigation status.
+
+**Tune** — Set scaling governors, frequency limits, energy performance preferences, clocksource, and C-state enable/disable per core. Or use `cputil max` / `cputil min` to instantly switch between performance and powersave profiles.
+
+**Persist** — The companion daemon (`cputild`) continuously enforces your configuration, re-applying it on a configurable polling interval so settings survive suspend/resume cycles and system events.
+
+**Export** — Full system data available in JSON and YAML for scripting and automation.
 
 # Install
 ### Debian amd64
 
-```commandline
-wget https://github.com/ryzeon-dev/cputil/releases/download/v8.0.0/cputil_8.0.0_amd64.deb && sudo apt install ./cputil_8.0.0_amd64.deb
+```bash
+wget https://github.com/ryzeon-dev/cputil/releases/download/v8.0.0/cputil_8.0.0_amd64.deb 
+sudo apt install ./cputil_8.0.0_amd64.deb
 ```
-Please note that the `.deb` package was built on Debian 13, which may result in incompatibility with older Debian versions 
+> **Note**: the `.deb` package was built on Debian 13, which may result in incompatibility with older Debian versions 
 
-### Compile from source and install
+### Build from source
+Requires: `python3, python3-venv, python3-pip, cmake, make, build-essential`
 
-- compilation requires 
-  - `python3`
-  - `python3-venv`
-  - `python3-pip` 
-  - `cmake`
-  - `make`
-  - `build-essential`
-- use the `install.sh` script, executing it as root
-  - run `sudo bash install.sh bin` to only install the utility program
-  - run `sudo bash install.sh daemon` to only install the daemon
-  - run `sudo bash install.sh all` to install both
-- both options require the compilation of the source files (which is done automatically by the installation script) 
+```bash
+git clone https://github.com/ryzeon-dev/cputil
+cd cputil
 
-# Uninstall
-- to uninstall use `uninstall.sh` script with root privilegies
-  - run `sudo bash uninstall.sh bin` to uninstall binary executable
-  - run `sudo bash uninstall.sh daemon` to uninstall the daemon
-  - run `sudo bash uninstall.sh all` to uninstall both
+# Install everything (CLI + daemon)
+sudo bash install.sh all
+
+# Or install individually
+sudo bash install.sh bin        # CLI ONLY
+sudo bash install.sh daemon     # daemon only
+```
+
+### Uninstall
+```bash
+sudo bash uninstall.sh all # or: bin / daemon
+```
 
 # Usage
 `cputil [COMMAND [arg] [OPTION]]`
 
-## Available commands
-`set, max, min, load, all, info, scaling, toplogy, temperature, usage, energy, prefcore, cstate, vuln, json, yaml, version, watch, help`
+###  Information commands
+| Command       | Alias | Description                                                      |
+|:--------------|:---:|------------------------------------------------------------------|
+| `info`        | `i` | CPU model, architecture, cores, clocks, flags (default)          |
+| `scaling`     | `s` | Governors, frequencies, energy preferences, per-core settings    |
+| `topology`    | `t` | Cache hierarchy and sharing, physical core/die mapping           | 
+| `temperature` | `T` | CPU temperature sensor readings                                  |
+| `energy`      | `e` | Energy consumption via Intel RAPL sensors                        |
+| `prefcore`    | `p` | Prefcore ranking per core with CCD grouping                      | 
+| `cstate`      | `c` | C-state idle residency per core, with latency and enable status  | 
+| `vuln`        | `v` | CPU vulnerabilities and mitigation status                        | 
+| `usage` | `u` | Average and per-logical-processor usage and frequency | 
+| `watch`       | `w` | Continuous live reading of usage and temperature                 |
+| `all`         | `a` | Show all of the above in sequence                                |
 
-All the commands flagged with `*` require execution as `root`
+### Tuning commands (root required)
+| Command                             | Alias | Description                                                                |
+|:------------------------------------|:-----:|----------------------------------------------------------------------------|
+| `set governor VALUE`                | `sg`  | Set scaling governor                                                       |
+| `set frequency minimum VALUE`       | `sfm` | Set minimum scaling frequency                                              |
+| `set frequency maximum VALUE`       | `sfM` | Set maximum scaling frequency                                              |
+| `set energy preference VALUE`       | `sep` | Set energy performance preference                                          | 
+| `set clocksource VALUE`             | `sc`  | Set clocksource                                                            |
+| `set cstate STATE enabled/disabled` | `sC`  | Enable or disable a C-state                                                |
+| `max`                               | - | Performance mode: `performance` governor, max frequency, `performance` EPP |
+| `min` | - | Powersave mode: `powersave` governor, min frequency, `power` EPP           | 
+| `load CONF` | `l` | Load a configuration template                                              | 
 
-## `set`*
-- allows to set the value one cpu's parameter
-- available parameters `governor, frequency minimum, frequency maximum, energy preference, clocksource`
-- usage: `cputil set PARAMETER VALUE [-cpu]`
-  - the `-cpu` flag allows to select the logical processor to affect with the setter
-  - does not work with `set clocksource` and `set cstate`
-- cstate setting has a different syntax:
-  - `set cstate STATE enabled/disabled`
-- setters abbreviations:
-  - `set governor -> sg`
-  - `set frequency minimum -> sfm`
-  - `set frequency maximum -> sfM`
-  - `set energy prefrence -> sep`
-  - `set clocksource -> sc`
-  - `set cstate -> sC`
+The `-cpu N` option can be used with `set governor`, `set frequency minimum`, and `set frequency maximum` to target a specific logical processor.
 
-## `max`*
-- sets the processor into `maximum performance` mode
-  - sets `performance` scaling governor
-  - sets both minimum and maximum frequency to the highest available value
-  - sets the energy performance preference to `performance`
+### Export commands
 
-## `min`*
-- sets the processor into `minimum performance` mode
-  - sets `powersave` scaling governor
-  - sets both minimum and maximum frequency to the lowest available value
-  - sets the energy performance preference to `power`
+| Command | Alias | Description |
+|:---|:---:|---|
+| `json` | `j` | All available information in JSON format |
+| `yaml` | `y` | All available information in YAML format |
+| `dump` | `d` | Show currently loaded cputild configuration |
 
-## `load`*
-- loads a performance template configuration file
-- the configuration files can be saved into `/etc/cputild/templates`
-- usage: `cputil load CONF_FILE`
-- `CONF_FILE` can either be a filepath, or a filename if saved into `/etc/cputild/templates`
+# Daemon
 
-## `all`
-- can be abbreviated as `cputil a`
-- shows, in order, the following information:
-  - processor info 
-  - scaling info
-  - topology info
-  - energy info
-  - prefcore info
-  - c-state info
-  - vulnerabilities info
-  - temperature info
-  - usage info
+The `cputild` daemon maintains your CPU configuration persistently. It runs as a systemd service and re-applies settings on a configurable polling interval (default: 10 seconds).
+ 
+Configuration lives at `/etc/cputild/cputild.conf`. Template configurations can be saved in `/etc/cputild/templates/` and loaded with `cputil load`.
+ 
+Configuration parameters:
+ 
+| Parameter | Description                              |
+|-----------|------------------------------------------|
+| `governor` | Scaling governor to enforce              |
+| `min_scaling_frequency` | Minimum frequency to enforce|
+| `max_scaling_frequency` | Maximum frequency to enforce|
+| `energy_performance_preference` | EPP value to enforce|
+| `clocksource` | Clocksource to enforce|
+| `polling_interval` | How often to re-apply settings (seconds) |
+ 
+Set any parameter to `auto` to leave it unmanaged.
 
-## `info`
-- can be abbreviated as `cputil i`
-- `cputil info` shows:
-  - model name
-  - architecture
-  - byte order
-  - cores count
-  - threads count
-  - clock boost availability
-  - minimum clock
-  - maximum clock
-  - bogomips
-  - virtualization availability
-  - AMD p-state (if available)
-  - flags
+# How it compares
+ 
+| | cputil | cpupower | auto-cpufreq | power-profiles-daemon |
+|---|---|---|---|---|
+| CPU info & diagnostics | ✓ | partial | ✗ | ✗ |
+| Frequency tuning | ✓ | ✓ | automatic | profile-based |
+| AMD prefcore ranking | ✓ | ✗ | ✗ | ✗ |
+| C-state inspection & control | ✓ | ✓ | ✗ | ✗ |
+| Energy monitoring (RAPL) | ✓ | ✗ | ✗ | ✗ |
+| Vulnerability audit | ✓ | ✗ | ✗ | ✗ |
+| Persistent daemon | ✓ | ✗ | ✓ | ✓ |
+| JSON/YAML export | ✓ | ✗ | ✗ | ✗ |
+ 
+# License
+ 
+[AGPL-3.0](LICENSE)
 
-# `scaling`
-- can be abbreviated as `cputil s`
-- `cputil scaling` shows:
-  - available scaling governors
-  - available scaling frequencies
-  - available energy performance preferences
-  - available clocksourecs
-  - current scaling driver
-  - current clocksource
-  - per-processor setting of `scaling governor, frequencies, energy performance preference`
+***
 
-## `topology`
-- can be abbreviated as `cputil t`
-- `cputil topology` shows per-processor:
-  - `L1` cache size and sharing
-  - `L2` cache size and sharing
-  - `L3` cache size and sharing
-  - `physical core` id
-  - `physical die` id 
-
-## `temperature`
-- can be abbreviated as `cputil T`
-- `cputil temperature` shows the reading of all the cpu related temperature sensors
-
-## `usage`
-- can be abbreviated as `cputil u`
-- `cputil usage` shows average and per-processor:
-  - `total` usage
-  - `user` usage
-  - `nice` usage
-  - `system` usage
-  - `idle` usage
-  - `iowait` usage
-  - `interrupt` usage
-  - `soft-interrupt` usage
-  - `steal` usage
-  - `guest` usage
-  - `guest_nice` usage
-  - `frequency` in MHz
-- if the `-avg` flag is added, ony shows average usage info
-
-## `energy`
-- can be abbreviated as `cputil e`
-- shows energy consumption in Joule, listing every available sensor
-- may require root privilegies to execute
-
-## `prefcore`
-- can be abbreviated as `cputil p`
-- shows per-core prefcore ranking
-
-## `cstate`
-- can be abbreviated as `cputil c`
-- shows:
-  - available idle states, with relative description and latency
-  - per-core c-state usage and if enabled/disabled
-
-## `vuln`
-- can be abbreviated as `cputil v`
-- shows the system-known CPU vulnerabilities and if the processor is affected
-  - if affected, shows how they are mitigated
-
-## `json`
-- can be abbreviated as `cputil j`
-- `cputil json` shows all the available information in `JSON` format
-
-## `yaml`
-- can be abbreviated as `cputil y`
-- `cputil yaml` shows all the available information in `YAML` format
-
-## `version`
-- can be abbreviated as `cputil V`
-- `cputil version` shows the current `cputil` version
-
-## `watch`
-- can be abbreviated as `cputil w`
-- `cputil watch` shows continuous reading of:
-  - average cpu usage
-  - current temperature(s) reading(s)
-
-## `help`
-- can be abbreviated as `cputil h`
-- `cputil help` shows the help message and exits
-
-## Daemon
-- maintains cpu parameters setting
-- in the installation process, it is configured as a systemd service, and started
-- once installed (refer to the Install section), the daemon will loop, executing its procedure every 60 seconds
-  - it reads the configuration file, located at `/etc/cputild/cputild.conf`
-  - parses the configuration, and applies it 
-- the value assigned to configuration parameters must be allowed, check the available values in your system running `cputil` 
-- if any parameter is set to `auto`, it will not be modified
-- configuration parameters are:
-  - `governor`
-  - `min_scaling_frequency`
-  - `max_scaling_frequency`
-  - `energy_performance_preference`
-  - `polling_interval` (default value is 10 seconds)
-
-## Sample output
+### Sample output
 
 ```
 $ cputil info
@@ -252,30 +232,7 @@ Processor  4:	powersave governor    frequency max = 5752000, min = 2981000    en
 Processor  5:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
 Processor  6:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
 Processor  7:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor  8:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor  9:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 10:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 11:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 12:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 13:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 14:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 15:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 16:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 17:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 18:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 19:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 20:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 21:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 22:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 23:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 24:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 25:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 26:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 27:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 28:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 29:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 30:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
-Processor 31:	powersave governor    frequency max = 5752000, min = 2981000    energy preference = balance_performance
+...
 
 $ cputil topology
 
@@ -334,174 +291,7 @@ Processor 7:
     L3 cache: 32768 KB	shared with processor(s): 0, 1, 2, 3, 4, 5, 6, 16
     Physical core: 7
     Physical die: 0
-
-Processor 8:
-    L2 cache: 1024 KB	shared with processor(s): 24
-    L1 cache: 80 KB	shared with processor(s): 24
-    L3 cache: 32768 KB	shared with processor(s): 9, 10, 11, 12, 13, 14, 15, 24
-    Physical core: 8
-    Physical die: 1
-
-Processor 9:
-    L2 cache: 1024 KB	shared with processor(s): 25
-    L1 cache: 80 KB	shared with processor(s): 25
-    L3 cache: 32768 KB	shared with processor(s): 8, 10, 11, 12, 13, 14, 15, 24
-    Physical core: 9
-    Physical die: 1
-
-Processor 10:
-    L2 cache: 1024 KB	shared with processor(s): 26
-    L1 cache: 80 KB	shared with processor(s): 26
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 11, 12, 13, 14, 15, 24
-    Physical core: 10
-    Physical die: 1
-
-Processor 11:
-    L2 cache: 1024 KB	shared with processor(s): 27
-    L1 cache: 80 KB	shared with processor(s): 27
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 12, 13, 14, 15, 24
-    Physical core: 11
-    Physical die: 1
-
-Processor 12:
-    L2 cache: 1024 KB	shared with processor(s): 28
-    L1 cache: 80 KB	shared with processor(s): 28
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 13, 14, 15, 24
-    Physical core: 12
-    Physical die: 1
-
-Processor 13:
-    L2 cache: 1024 KB	shared with processor(s): 29
-    L1 cache: 80 KB	shared with processor(s): 29
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 14, 15, 24
-    Physical core: 13
-    Physical die: 1
-
-Processor 14:
-    L2 cache: 1024 KB	shared with processor(s): 30
-    L1 cache: 80 KB	shared with processor(s): 30
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 15, 24
-    Physical core: 14
-    Physical die: 1
-
-Processor 15:
-    L2 cache: 1024 KB	shared with processor(s): 31
-    L1 cache: 80 KB	shared with processor(s): 31
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 24
-    Physical core: 15
-    Physical die: 1
-
-Processor 16:
-    L2 cache: 1024 KB	shared with processor(s): 0
-    L1 cache: 80 KB	shared with processor(s): 0
-    L3 cache: 32768 KB	shared with processor(s): 0, 1, 2, 3, 4, 5, 6, 7, 16
-    Physical core: 0
-    Physical die: 0
-
-Processor 17:
-    L2 cache: 1024 KB	shared with processor(s): 1
-    L1 cache: 80 KB	shared with processor(s): 1
-    L3 cache: 32768 KB	shared with processor(s): 0, 1, 2, 3, 4, 5, 6, 7, 16
-    Physical core: 1
-    Physical die: 0
-
-Processor 18:
-    L2 cache: 1024 KB	shared with processor(s): 2
-    L1 cache: 80 KB	shared with processor(s): 2
-    L3 cache: 32768 KB	shared with processor(s): 0, 1, 2, 3, 4, 5, 6, 7, 16
-    Physical core: 2
-    Physical die: 0
-
-Processor 19:
-    L2 cache: 1024 KB	shared with processor(s): 3
-    L1 cache: 80 KB	shared with processor(s): 3
-    L3 cache: 32768 KB	shared with processor(s): 0, 1, 2, 3, 4, 5, 6, 7, 16
-    Physical core: 3
-    Physical die: 0
-
-Processor 20:
-    L2 cache: 1024 KB	shared with processor(s): 4
-    L1 cache: 80 KB	shared with processor(s): 4
-    L3 cache: 32768 KB	shared with processor(s): 0, 1, 2, 3, 4, 5, 6, 7, 16
-    Physical core: 4
-    Physical die: 0
-
-Processor 21:
-    L2 cache: 1024 KB	shared with processor(s): 5
-    L1 cache: 80 KB	shared with processor(s): 5
-    L3 cache: 32768 KB	shared with processor(s): 0, 1, 2, 3, 4, 5, 6, 7, 16
-    Physical core: 5
-    Physical die: 0
-
-Processor 22:
-    L2 cache: 1024 KB	shared with processor(s): 6
-    L1 cache: 80 KB	shared with processor(s): 6
-    L3 cache: 32768 KB	shared with processor(s): 0, 1, 2, 3, 4, 5, 6, 7, 16
-    Physical core: 6
-    Physical die: 0
-
-Processor 23:
-    L2 cache: 1024 KB	shared with processor(s): 7
-    L1 cache: 80 KB	shared with processor(s): 7
-    L3 cache: 32768 KB	shared with processor(s): 0, 1, 2, 3, 4, 5, 6, 7, 16
-    Physical core: 7
-    Physical die: 0
-
-Processor 24:
-    L2 cache: 1024 KB	shared with processor(s): 8
-    L1 cache: 80 KB	shared with processor(s): 8
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
-    Physical core: 8
-    Physical die: 1
-
-Processor 25:
-    L2 cache: 1024 KB	shared with processor(s): 9
-    L1 cache: 80 KB	shared with processor(s): 9
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
-    Physical core: 9
-    Physical die: 1
-
-Processor 26:
-    L2 cache: 1024 KB	shared with processor(s): 10
-    L1 cache: 80 KB	shared with processor(s): 10
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
-    Physical core: 10
-    Physical die: 1
-
-Processor 27:
-    L2 cache: 1024 KB	shared with processor(s): 11
-    L1 cache: 80 KB	shared with processor(s): 11
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
-    Physical core: 11
-    Physical die: 1
-
-Processor 28:
-    L2 cache: 1024 KB	shared with processor(s): 12
-    L1 cache: 80 KB	shared with processor(s): 12
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
-    Physical core: 12
-    Physical die: 1
-
-Processor 29:
-    L2 cache: 1024 KB	shared with processor(s): 13
-    L1 cache: 80 KB	shared with processor(s): 13
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
-    Physical core: 13
-    Physical die: 1
-
-Processor 30:
-    L2 cache: 1024 KB	shared with processor(s): 14
-    L1 cache: 80 KB	shared with processor(s): 14
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
-    Physical core: 14
-    Physical die: 1
-
-Processor 31:
-    L2 cache: 1024 KB	shared with processor(s): 15
-    L1 cache: 80 KB	shared with processor(s): 15
-    L3 cache: 32768 KB	shared with processor(s): 8, 9, 10, 11, 12, 13, 14, 15, 24
-    Physical core: 15
-    Physical die: 1
+...
 
 $ cputil temperature
 Tctl: 40.875 C
@@ -632,342 +422,7 @@ Processor: 7
     guest:              0.0 %
     guest_nice:         0.0 %
     Frequency: 		5716.27 MHz
-
-Processor: 8
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		5427.97 MHz
-
-Processor: 9
-    total:              3.85 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             3.85 %
-    idle:               96.15 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		4154.04 MHz
-
-Processor: 10
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		2981.0 MHz
-
-Processor: 11
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		2981.0 MHz
-
-Processor: 12
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		5459.81 MHz
-
-Processor: 13
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		2981.0 MHz
-
-Processor: 14
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		2981.0 MHz
-
-Processor: 15
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		5459.36 MHz
-
-Processor: 16
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		2981.0 MHz
-
-Processor: 17
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		3738.72 MHz
-
-Processor: 18
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		2981.0 MHz
-
-Processor: 19
-    total:              3.85 %
-    user:               3.85 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               96.15 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		3799.37 MHz
-
-Processor: 20
-    total:              4.0 %
-    user:               4.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               96.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		5721.52 MHz
-
-Processor: 21
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		3878.06 MHz
-
-Processor: 22
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		5722.47 MHz
-
-Processor: 23
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		5723.14 MHz
-
-Processor: 24
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		5465.84 MHz
-
-Processor: 25
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		4909.28 MHz
-
-Processor: 26
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		5428.47 MHz
-
-Processor: 27
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		3532.7 MHz
-
-Processor: 28
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		3917.49 MHz
-
-Processor: 29
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		5459.13 MHz
-
-Processor: 30
-    total:              0.0 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             0.0 %
-    idle:               100.0 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		2981.0 MHz
-
-Processor: 31
-    total:              11.11 %
-    user:               0.0 %
-    nice:               0.0 %
-    system:             11.11 %
-    idle:               88.89 %
-    iowait:             0.0 %
-    interrupt:          0.0 %
-    soft-interrupt:     0.0 %
-    steal:              0.0 %
-    guest:              0.0 %
-    guest_nice:         0.0 %
-    Frequency: 		5463.3 MHz
+...
 
 $ cputil energy
 Intel RAPL: enabled
