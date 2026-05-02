@@ -53,7 +53,7 @@ def main():
         maxAll()
 
     elif argParser.load:
-        loadConf()
+        loadConf(argParser)
 
     elif argParser.temperature:
         printTemperature()
