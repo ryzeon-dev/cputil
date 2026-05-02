@@ -135,3 +135,41 @@ def getFlags() -> str | None:
         return flags.split(':')[1].strip()
 
     return None
+
+class CpuInfo:
+    def __init__(self):
+        self.tryGet('modelName', getModelName)
+        self.tryGet('architecture', getArchitecture)
+        self.tryGet('coreCount', getCoreCount)
+        self.tryGet('threadCount', getThreadCount)
+        self.tryGet('clockBoost', getClockBoost)
+        self.tryGet('minimumClock', getMinimumClock)
+        self.tryGet('maximumClock', getMaximumClock)
+        self.tryGet('bogoMips', getBogoMips)
+        self.tryGet('virtualizationEnabled', getVirtualizationEnabled)
+        self.tryGet('flags', getFlags)
+
+        try:
+            self.byteOrder, self.firstBit = getByteOrder()
+        except:
+            self.byteOrder = None
+            self.firstBit = None
+
+        try:
+            self.amdPStateStatus, self.amdPstatePrefcore = getAmdPState()
+        except:
+            self.amdPStateStatus = None
+            self.amdPstatePrefcore = None
+
+    def tryGet(self, attr, fn):
+        try:
+            value = fn()
+
+        except:
+            setattr(self, attr, None)
+
+        else:
+            setattr(self, attr, value)
+
+    def __repr__(self):
+        return f'{self.__dict__}'

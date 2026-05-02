@@ -3,6 +3,8 @@ import time
 
 from lib_cputil import *
 
+run_watch = True
+
 def printHelp(version):
     print(f'cputil: cpu utils CLI v{version}')
     print('usage: cputil [COMMAND arg [OPTION]]')
@@ -109,53 +111,47 @@ def printScaling():
         print(line)
 
 def printInfo():
-    model = getModelName()
+    cpuinfo = CpuInfo()
     prefixSize = 24
 
-    if model:
-        print(f'Model name:'.ljust(prefixSize) + model)
+    if cpuinfo.modelName:
+        print(f'Model name:'.ljust(prefixSize) + cpuinfo.modelName)
 
-    print(f'Architecture:'.ljust(prefixSize) + getArchitecture())
+    if cpuinfo.architecture:
+        print(f'Architecture:'.ljust(prefixSize) + cpuinfo.architecture)
 
-    byteOrder, firstBit = getByteOrder()
-    if byteOrder:
-        print(f'Byte order:'.ljust(prefixSize) + f'{byteOrder} (first bit is {firstBit})')
+    if cpuinfo.byteOrder and cpuinfo.firstBit:
+        print(f'Byte order:'.ljust(prefixSize) + f'{cpuinfo.byteOrder} (first bit is {cpuinfo.firstBit})')
 
-    coreCount = getCoreCount()
-    if coreCount:
-        print(f'Cores count:'.ljust(prefixSize) + f'{coreCount}')
+    if cpuinfo.coreCount:
+        print(f'Cores count:'.ljust(prefixSize) + f'{cpuinfo.coreCount}')
 
-    threadCount = getThreadCount()
-    if threadCount:
-        print(f'Threads count:'.ljust(prefixSize) + f'{threadCount}')
+    if cpuinfo.threadCount:
+        print(f'Threads count:'.ljust(prefixSize) + f'{cpuinfo.threadCount}')
 
-    print(f'Clock boost:'.ljust(prefixSize) + getClockBoost())
+    if cpuinfo.clockBoost:
+        print(f'Clock boost:'.ljust(prefixSize) + cpuinfo.clockBoost)
 
-    try:
-        print(f'Minimum clock:'.ljust(prefixSize) + f'{getMinimumClock()} GHz')
-    except:
-        pass
+    if cpuinfo.minimumClock:
+        print(f'Minimum clock:'.ljust(prefixSize) + f'{cpuinfo.minimumClock} GHz')
 
-    try:
-        print(f'Maximum clock:'.ljust(prefixSize) + f'{getMaximumClock()} GHz')
-    except:
-        pass
+    if cpuinfo.maximumClock:
+        print(f'Maximum clock:'.ljust(prefixSize) + f'{cpuinfo.maximumClock} GHz')
 
-    if (bogomips := getBogoMips()):
-        print(f'BogoMIPS:'.ljust(prefixSize) + str(round(bogomips, 2)))
+    if cpuinfo.bogoMips:
+        print(f'BogoMIPS:'.ljust(prefixSize) + str(round(cpuinfo.bogoMips, 2)))
 
-    print(f'Virtualization:'.ljust(prefixSize) + ('not ' if not getVirtualizationEnabled() else '') + 'enabled')
+    if cpuinfo.virtualizationEnabled is not None:
+        print(f'Virtualization:'.ljust(prefixSize) + ('not ' if not cpuinfo.virtualizationEnabled else '') + 'enabled')
 
-    amdPStateStatus, amdPStatePrefcore = getAmdPState()
+    if cpuinfo.amdPStateStatus is not None:
+        print(f'AMD P-State status:'.ljust(prefixSize) + cpuinfo.amdPStateStatus)
 
-    if amdPStateStatus is not None:
-        print(f'AMD P-State status:'.ljust(prefixSize) + amdPStateStatus)
+    if cpuinfo.amdPstatePrefcore is not None:
+        print(f'AMD P-State prefcore:'.ljust(prefixSize) + cpuinfo.amdPstatePrefcore)
 
-    if amdPStatePrefcore is not None:
-        print(f'AMD P-State prefcore:'.ljust(prefixSize) + amdPStatePrefcore)
-
-    if (flags := getFlags()):
-        print(f'Flags:'.ljust(prefixSize) + flags)
+    if cpuinfo.flags:
+        print(f'Flags:'.ljust(prefixSize) + cpuinfo.flags)
 
 def printTopology():
     threadCount = getThreadCount()

@@ -20,7 +20,7 @@ class CoreCstates:
         self.coreId: int = coreId
         self.total: int = total
 
-        self.coreCstates: list[CoreCstate] = []
+        self.coreCstates: list[CoreCstateStatus] = []
 
     def toJson(self):
         return {
@@ -29,7 +29,7 @@ class CoreCstates:
             'states': [state.toJson() for state in self.coreCstates]
         }
 
-class CoreCstate:
+class CoreCstateStatus:
     def __init__(self, name: str, time: int, enabled: bool):
         self.name: str = name
         self.time: int = time
@@ -83,7 +83,7 @@ def getCpuCstates() -> (list[Cstate], list[CoreCstates]):
                 stateLatency = int(file.read().strip())
 
             coreCstates.total += stateTime
-            coreCstates.coreCstates.append(CoreCstate(stateName, stateTime, stateDisabled == '0'))
+            coreCstates.coreCstates.append(CoreCstateStatus(stateName, stateTime, stateDisabled == '0'))
 
             if stateName not in cstateNames:
                 cstates.append(Cstate(stateName, stateDesc, stateLatency))

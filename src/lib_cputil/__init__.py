@@ -3,8 +3,7 @@ from .sysfs_const import *
 from .exporter import dictFormat
 
 from .cpu_info import (
-    getModelName, getArchitecture, getByteOrder, getCoreCount, getThreadCount, getClockBoost, getBogoMips,
-    getMinimumClock, getMaximumClock, getAmdPState, getVirtualizationEnabled, getFlags
+    CpuInfo, getThreadCount
 )
 
 from .scaling import (

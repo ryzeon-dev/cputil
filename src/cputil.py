@@ -6,7 +6,7 @@ import json
 import yaml
 import sys
 
-VERSION = '8.0.0'
+VERSION = '8.0.1'
 
 run_watch = True
 
@@ -109,5 +109,4 @@ if __name__ == '__main__':
         main()
 
     except Exception as e:
-        print(''.join(traceback.format_exception(e)))
-        print(f'Fatal: unexpected error `{e}`')
+        print(f'Fatal: unexpected error "{e}"')
