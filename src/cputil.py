@@ -109,4 +109,5 @@ if __name__ == '__main__':
         main()
 
     except Exception as e:
+        print(''.join(traceback.format_exception(e)))
         print(f'Fatal: unexpected error "{e}"')

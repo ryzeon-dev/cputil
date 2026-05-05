@@ -26,7 +26,7 @@ def set(argParser):
 
         elif (freq := argParser.setFrequencyMinimum):
             if not setMinimumScalingFrequency(freq, cpu):
-                print('Error setting maximum scaling frequency')
+                print('Error setting minimum scaling frequency')
                 sys.exit(1)
 
     elif argParser.setEnergyPerformancePreference:

@@ -1,5 +1,6 @@
 import signal
 import time
+import traceback
 
 from lib_cputil import *
 
@@ -206,7 +207,7 @@ def printUsage(argParser):
         usages = cpuUsage()
         averageFrequency, frequencies = cpuFrequency()
 
-    except:
+    except KeyboardInterrupt:
         sys.exit(0)
 
     if argParser.cpu:
@@ -368,7 +369,7 @@ def printCstate():
         print(
             f'Core {coreCstate.coreId:>2}    ' + '    '.join(
                 f'{state.name} [{"enabled" if state.enabled else "disabled"}]: '
-                f'{(f"{(state.time * 100 / coreCstate.total):.2f}").rjust(6)} %' for state in
+                f'{(f"{(0 if coreCstate.total == 0 else (state.time * 100 / coreCstate.total)):.2f}").rjust(6)} %' for state in
                 sorted(coreCstate.coreCstates, key=lambda c: c.name)
             )
         )
@@ -380,6 +381,9 @@ def printVulnerabilities():
     except:
         print('Error getting CPU vulnerabilities')
         sys.exit(1)
+
+    if not vulnInfo:
+        return
 
     maxVulnLength = len(max([vuln.name for vuln in vulnInfo], key=len))
 

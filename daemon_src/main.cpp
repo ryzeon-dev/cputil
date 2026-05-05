@@ -5,8 +5,21 @@
 int main() {
     Config config("/etc/cputild/cputild.conf");
 
+    int retries = 0;
+
     while (true) {
-        config.update();
+        try {
+            config.update();
+        } catch (exception &e) {
+            if (retries >= 5) {
+                cout << "Configuration file reading failed 5 consecutive times. Exiting" << endl;
+                break;
+            }
+
+            retries += 1;
+            continue;
+        }
+        retries = 0;
 
         if (config.getGovernor() != "auto") {
             cout << "setting governor to " << config.getGovernor() << endl;
@@ -44,8 +57,10 @@ int main() {
             }
         }
 
-        sleep(config.getPollingInterval());
-
+        int pollingInterval = config.getPollingInterval();
+        if (pollingInterval > 0) {
+            sleep(config.getPollingInterval());
+        }
     }
 
     return 0;

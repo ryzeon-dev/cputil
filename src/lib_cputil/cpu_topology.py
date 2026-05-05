@@ -46,6 +46,8 @@ def cpuCache():
     global GENERAL_DRIVER
 
     cpuDirs = grep(os.listdir(GENERAL_DRIVER), 'cpu', ignoreCase=True)
+    if not isinstance(cpuDirs, list):
+        return {}
 
     if 'cpufreq' in cpuDirs:
         cpuDirs.remove('cpufreq')
@@ -91,7 +93,7 @@ def processorsFromRange(processorRange):
             linearRange = list(range(start, rangeEnd + 1))
 
             for addition in additional:
-                linearRange.append(addition)
+                linearRange.append(int(addition))
             return linearRange
 
         else:
@@ -101,12 +103,4 @@ def processorsFromRange(processorRange):
     return list(int(element) for element in processorRange.split(','))
 
 def processorSort(processors):
-    sorted = [None] * len(processors)
-
-    for processor in processors:
-        processorName = list((chr if chr not in string.ascii_letters else '') for chr in processor)
-
-        index = int(''.join(processorName))
-        sorted[index] = processor
-
-    return sorted
+    return sorted(processors, key=lambda processor: int(''.join([chr for chr in processor if chr in '0123456789'])))

@@ -14,6 +14,13 @@ void Config::update() {
         throw std::runtime_error("Config::update: Could not open config file");
     }
 
+    this->governor = "auto";
+    this->minScalingFreq = -1;
+    this->maxScalingFreq = -1;
+    this->pollingInterval = 10;
+    this->clocksource = "auto";
+    this->energyPerformancePreference = "auto";
+
     string line;
     while (getline(file, line)) {
         if (line.starts_with('#') || line.empty()) {

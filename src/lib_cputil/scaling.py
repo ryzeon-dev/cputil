@@ -109,8 +109,11 @@ def setClockSource(clocksource):
 
     print(f'Setting {clocksource} clock source')
 
-    with open(os.path.join(CLOCKSOURCE_DIR, 'current_clocksource'), 'w') as file:
-        file.write(clocksource)
+    try:
+        with open(os.path.join(CLOCKSOURCE_DIR, 'current_clocksource'), 'w') as file:
+            file.write(clocksource)
+    except:
+        return False
 
     return True
 
@@ -148,7 +151,7 @@ def getCurrentScalingDriver() -> str:
 
     return ','.join(drivers)
 
-def getCurrentScalingGovernors() -> set[str]:
+def getCurrentScalingGovernors() -> dict[str]:
     governors = {}
     for policy in getAllPolicies():
         governors[policy] = readFile(f'{CPUFREQ_DIR}/{policy}/scaling_governor').strip()

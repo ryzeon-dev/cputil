@@ -1,6 +1,7 @@
 import time
 from .util import grep, readFile
 from .sysfs_const import getAllPolicies
+from .static_const import *
 
 import re
 
@@ -34,7 +35,7 @@ def getParameterUsage(beforeStat, afterStat):
     total = sum(deltas)
 
     for index, param in enumerate(deltas):
-        usage[usageContexts[index]] = abs(round(param * 100 / total, 2))
+        usage[usageContexts[index]] = 0 if total == 0 else abs(round(param * 100 / total, 2))
 
     usage['total'] = round(100 - usage['idle'], 2)
 
@@ -63,7 +64,7 @@ def cpuUsage():
     except:
         return []
 
-    if len(beforeStat) != usageContexts:
+    if len(beforeStat[0]) != len(usageContexts):
         usageContexts.extend([
             'steal', 'guest', 'guest_nice'
         ])
@@ -102,7 +103,7 @@ def cpuFrequency():
             if freq:
                 nonZeroFreqs.append(freq)
 
-        avg = round(sum(nonZeroFreqs) / len(nonZeroFreqs), 2)
+        avg = 0 if len(nonZeroFreqs) == 0 else round(sum(nonZeroFreqs) / len(nonZeroFreqs), 2)
         return avg, frequencies
 
     else:

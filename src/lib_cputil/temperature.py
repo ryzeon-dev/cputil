@@ -38,6 +38,7 @@ def getCpuTemperature():
     outputReading = {}
     for sensorName, sensor in readings.items():
         sensorLabel = sensor.get('label', sensorName)
-        outputReading[sensorLabel] = int(sensor['input']) / 1000
+        value = sensor.get('input', 0)
+        outputReading[sensorLabel] = int(value) / 1000
 
     return outputReading

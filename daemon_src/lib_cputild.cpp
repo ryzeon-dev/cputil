@@ -69,6 +69,7 @@ vector<string> lib_cputild::readScalingGovernors() {
         }
     }
 
+    closedir(cpufreq);
     return governors;
 }
 
@@ -98,7 +99,7 @@ vector<int> lib_cputild::readScalingFrequencies() {
         }
 
         int ufreq = atoi(fileContent.c_str());
-        if (!utils::contains(frequencies, ufreq)) {
+        if (ufreq != 0 && !utils::contains(frequencies, ufreq)) {
             frequencies.push_back(ufreq);
         }
 
@@ -121,6 +122,7 @@ vector<int> lib_cputild::readScalingFrequencies() {
         }
     }
 
+    closedir(cpufreq);
     return frequencies;
 }
 
@@ -161,6 +163,7 @@ vector<string> lib_cputild::readEnergyPerformancePreferences() {
         }
     }
 
+    closedir(cpufreq);
     return epps;
 }
 

@@ -55,7 +55,7 @@ def dictFormat():
         cache = cpuCache()
 
     except:
-        cache = None
+        cache = {}
 
     threadDist = getThreadDistribution()
     dieDist = processorDieDistribution()
@@ -116,7 +116,7 @@ def dictFormat():
         if dieDist:
             dict[processorId]['physical_die'] = int(dieDist[index]) if dieDist else ''
 
-        if cache is not None:
+        if sortedCache:
             processorCacheKey = sortedCache[index]
             for cacheLevel in cache[processorCacheKey]:
 
@@ -147,11 +147,12 @@ def dictFormat():
         dict['core_cstates'] = [coreCstate.toJson() for coreCstate in coreCstates]
 
     try:
-        energtConsumption = getCpuEnergyConsumption()
+        energyConsumption = getCpuEnergyConsumption()
     except:
         pass
     else:
-        dict['energy_consumption'] = energtConsumption.toJson()
+        if energyConsumption is not None:
+            dict['energy_consumption'] = energyConsumption.toJson()
 
     try:
         prefcores = getCpuPrefcores()

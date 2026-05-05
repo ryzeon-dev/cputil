@@ -47,11 +47,11 @@ public:
 private:
     string path;
 
-    string governor = "";
-    int minScalingFreq = 0;
-    int maxScalingFreq = 0;
-    string energyPerformancePreference = "";
-    int pollingInterval = 0;
+    string governor = "auto";
+    int minScalingFreq = -1;
+    int maxScalingFreq = -1;
+    string energyPerformancePreference = "auto";
+    int pollingInterval = 10;
     string clocksource = "auto";
 };
 
